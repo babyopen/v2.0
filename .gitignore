@@ -1,0 +1,31 @@
+# macOS 系统文件
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 编辑器临时文件
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# 依赖包
+node_modules/
+
+# 构建产物
+dist/
+build/
+.vite/
+
+# 备份文件
+*.bak
+*.backup
+Code_*.html
+
+# 整合版旧文件
+index-整合版.html
+index-full.html
+script-整合版.js
+style-整合版.css
+script.js
