@@ -6404,6 +6404,88 @@ const Business = {
   },
 
   /**
+   * 获取筛选后的精选特码历史记录
+   * @returns {Array} 筛选后的历史记录
+   */
+  getFilteredSpecialHistory: () => {
+    try {
+      const state = StateManager._state;
+      const history = state.specialHistory || [];
+      
+      if(!history || history.length === 0) {
+        return [];
+      }
+      
+      // 获取按钮选中状态
+      const show10Period = document.querySelector('.special-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
+      const show20Period = document.querySelector('.special-period-btn[data-period="20"]')?.classList.contains('active') ?? false;
+      const show30Period = document.querySelector('.special-period-btn[data-period="30"]')?.classList.contains('active') ?? false;
+      const showAllPeriod = document.querySelector('.special-period-btn[data-period="all"]')?.classList.contains('active') ?? false;
+      const show5Num = document.querySelector('.special-num-btn[data-num="5"]')?.classList.contains('active') ?? true;
+      const show10Num = document.querySelector('.special-num-btn[data-num="10"]')?.classList.contains('active') ?? false;
+      const show15Num = document.querySelector('.special-num-btn[data-num="15"]')?.classList.contains('active') ?? false;
+      const show20Num = document.querySelector('.special-num-btn[data-num="20"]')?.classList.contains('active') ?? false;
+      
+      // 获取当前模式筛选
+      const modeFilter = state.specialHistoryModeFilter || 'all';
+      // 获取当前系统模式
+      const currentMode = state.analysis.specialMode || 'hot';
+      const isAutoMode = currentMode === 'auto';
+      
+      // 预计算不同期数的自动模式决策结果
+      const autoModeDecisions = new Map();
+      if(isAutoMode) {
+        const uniquePeriods = new Set();
+        history.forEach(item => uniquePeriods.add(item.analyzeLimit));
+        
+        uniquePeriods.forEach(period => {
+          const data = Business.calcZodiacAnalysis(period);
+          if(data && data.sortedZodiacs && data.sortedZodiacs.length > 0) {
+            autoModeDecisions.set(period, Business.decideAutoMode(data));
+          }
+        });
+      }
+      
+      // 根据勾选状态筛选历史记录
+      const filteredHistory = history.filter(item => {
+        const period = item.analyzeLimit;
+        const periodText = item.selectedPeriodText || '';
+        const numCount = item.numCount || item.numbers.length;
+        const itemMode = item.mode || 'hot';
+        
+        let periodMatch = false;
+        if(show10Period && (period === 10 || periodText.includes('10期'))) periodMatch = true;
+        if(show20Period && (period === 20 || periodText.includes('20期'))) periodMatch = true;
+        if(show30Period && (period === 30 || periodText.includes('30期'))) periodMatch = true;
+        if(showAllPeriod && periodText.includes('全年')) periodMatch = true;
+        
+        let numMatch = false;
+        if(show5Num && numCount === 5) numMatch = true;
+        if(show10Num && numCount === 10) numMatch = true;
+        if(show15Num && numCount === 15) numMatch = true;
+        if(show20Num && numCount === 20) numMatch = true;
+        
+        let modeMatch = false;
+        if(modeFilter === 'all') {
+          modeMatch = true;
+        } else if(modeFilter === 'auto') {
+          const autoModeDecision = autoModeDecisions.get(period);
+          modeMatch = autoModeDecision === itemMode;
+        } else if(modeFilter === itemMode) {
+          modeMatch = true;
+        }
+        
+        return periodMatch && numMatch && modeMatch;
+      });
+      
+      return filteredHistory;
+    } catch(e) {
+      console.error('获取筛选历史记录失败', e);
+      return [];
+    }
+  },
+
+  /**
    * 渲染精选特码历史
    */
   renderSpecialHistory: () => {
@@ -6423,18 +6505,6 @@ const Business = {
         return;
       }
       
-      // 获取按钮选中状态（通过active类）
-      const show10Period = document.querySelector('.special-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
-      const show20Period = document.querySelector('.special-period-btn[data-period="20"]')?.classList.contains('active') ?? false;
-      const show30Period = document.querySelector('.special-period-btn[data-period="30"]')?.classList.contains('active') ?? false;
-      const showAllPeriod = document.querySelector('.special-period-btn[data-period="all"]')?.classList.contains('active') ?? false;
-      const show5Num = document.querySelector('.special-num-btn[data-num="5"]')?.classList.contains('active') ?? true;
-      const show10Num = document.querySelector('.special-num-btn[data-num="10"]')?.classList.contains('active') ?? false;
-      const show15Num = document.querySelector('.special-num-btn[data-num="15"]')?.classList.contains('active') ?? false;
-      const show20Num = document.querySelector('.special-num-btn[data-num="20"]')?.classList.contains('active') ?? false;
-      
-      // 获取当前模式筛选
-      const modeFilter = state.specialHistoryModeFilter || 'all';
       // 获取当前系统模式
       const currentMode = state.analysis.specialMode || 'hot';
       const isAutoMode = currentMode === 'auto';
@@ -6442,11 +6512,9 @@ const Business = {
       // 预计算不同期数的自动模式决策结果，避免重复计算
       const autoModeDecisions = new Map();
       if(isAutoMode) {
-        // 收集所有唯一的期数
         const uniquePeriods = new Set();
         history.forEach(item => uniquePeriods.add(item.analyzeLimit));
         
-        // 为每个期数计算自动模式决策
         uniquePeriods.forEach(period => {
           const data = Business.calcZodiacAnalysis(period);
           if(data && data.sortedZodiacs && data.sortedZodiacs.length > 0) {
@@ -6455,41 +6523,8 @@ const Business = {
         });
       }
       
-      // 根据勾选状态筛选历史记录
-      const filteredHistory = history.filter(item => {
-        const period = item.analyzeLimit;
-        const periodText = item.selectedPeriodText || '';
-        const numCount = item.numCount || item.numbers.length;
-        const itemMode = item.mode || 'hot'; // 默认为热号模式（兼容旧数据）
-        
-        let periodMatch = false;
-        if(show10Period && (period === 10 || periodText.includes('10期'))) periodMatch = true;
-        if(show20Period && (period === 20 || periodText.includes('20期'))) periodMatch = true;
-        if(show30Period && (period === 30 || periodText.includes('30期'))) periodMatch = true;
-        if(showAllPeriod && periodText.includes('全年')) periodMatch = true;
-        
-        let numMatch = false;
-        if(show5Num && numCount === 5) numMatch = true;
-        if(show10Num && numCount === 10) numMatch = true;
-        if(show15Num && numCount === 15) numMatch = true;
-        if(show20Num && numCount === 20) numMatch = true;
-        
-        // 模式筛选
-        let modeMatch = false;
-        if(modeFilter === 'all') {
-          // "全部"模式：始终显示所有模式（热号+冷号）的数据
-          modeMatch = true;
-        } else if(modeFilter === 'auto') {
-          // 自动模式筛选：显示与自动模式决策结果匹配的记录
-          const autoModeDecision = autoModeDecisions.get(period);
-          modeMatch = autoModeDecision === itemMode;
-        } else if(modeFilter === itemMode) {
-          // 特定模式：只显示对应模式的数据
-          modeMatch = true;
-        }
-        
-        return periodMatch && numMatch && modeMatch;
-      });
+      // 使用辅助函数获取筛选后的历史记录
+      const filteredHistory = Business.getFilteredSpecialHistory();
       
       // 分页逻辑（使用已声明的state变量）
       const pageSize = state.specialHistoryPageSize || 50;
@@ -6597,8 +6632,7 @@ const Business = {
   goToSpecialHistoryPage: (page) => {
     try {
       const state = StateManager._state;
-      const history = state.specialHistory;
-      const filteredHistory = history.filter(() => true); // 简化，实际需要重新计算筛选
+      const filteredHistory = Business.getFilteredSpecialHistory();
       const pageSize = state.specialHistoryPageSize || 50;
       const totalPages = Math.ceil(filteredHistory.length / pageSize);
       
@@ -6701,66 +6735,31 @@ const Business = {
 
   /**
    * 删除精选特码历史单条记录
+   * @param {number} filteredIdx - 筛选后的索引
    */
-  deleteSpecialHistoryItem: (displayIdx) => {
+  deleteSpecialHistoryItem: (filteredIdx) => {
     try {
       if(!confirm('确定删除该记录？')) return;
       const state = StateManager._state;
       const history = state.specialHistory || [];
       
-      if(displayIdx < 0 || displayIdx >= history.length) {
-        Toast.show('删除失败：记录不存在');
-        return;
-      }
+      // 获取筛选后的历史记录
+      const filteredHistory = Business.getFilteredSpecialHistory();
       
-      // 获取当前筛选状态
-      const show10Period = document.querySelector('.special-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
-      const show20Period = document.querySelector('.special-period-btn[data-period="20"]')?.classList.contains('active') ?? false;
-      const show30Period = document.querySelector('.special-period-btn[data-period="30"]')?.classList.contains('active') ?? false;
-      const showAllPeriod = document.querySelector('.special-period-btn[data-period="all"]')?.classList.contains('active') ?? false;
-      const show5Num = document.querySelector('.special-num-btn[data-num="5"]')?.classList.contains('active') ?? true;
-      const show10Num = document.querySelector('.special-num-btn[data-num="10"]')?.classList.contains('active') ?? false;
-      const show15Num = document.querySelector('.special-num-btn[data-num="15"]')?.classList.contains('active') ?? false;
-      const show20Num = document.querySelector('.special-num-btn[data-num="20"]')?.classList.contains('active') ?? false;
-      
-      // 根据勾选状态筛选历史记录，找到对应的实际索引
-      const filteredHistory = history.filter(item => {
-        const period = item.analyzeLimit;
-        const periodText = item.selectedPeriodText || '';
-        const numCount = item.numCount || item.numbers.length;
-        
-        let periodMatch = false;
-        if(show10Period && (period === 10 || periodText.includes('10期'))) periodMatch = true;
-        if(show20Period && (period === 20 || periodText.includes('20期'))) periodMatch = true;
-        if(show30Period && (period === 30 || periodText.includes('30期'))) periodMatch = true;
-        if(showAllPeriod && periodText.includes('全年')) periodMatch = true;
-        
-        let numMatch = false;
-        if(show5Num && numCount === 5) numMatch = true;
-        if(show10Num && numCount === 10) numMatch = true;
-        if(show15Num && numCount === 15) numMatch = true;
-        if(show20Num && numCount === 20) numMatch = true;
-        
-        return periodMatch && numMatch;
-      });
-      
-      const isExpanded = state.specialHistoryExpanded || false;
-      const displayCount = isExpanded ? filteredHistory.length : Math.min(4, filteredHistory.length);
-      const displayHistory = filteredHistory.slice(0, displayCount);
-      
-      if(displayIdx < 0 || displayIdx >= displayHistory.length) {
+      if(filteredIdx < 0 || filteredIdx >= filteredHistory.length) {
         Toast.show('删除失败：记录不存在');
         return;
       }
       
       // 找到要删除的记录
-      const itemToDelete = displayHistory[displayIdx];
+      const itemToDelete = filteredHistory[filteredIdx];
       
-      // 从原始历史记录中删除
+      // 从原始历史记录中删除（使用ID或唯一标识）
       const actualIdx = history.findIndex(h => 
-        h.timestamp === itemToDelete.timestamp && 
-        h.expect === itemToDelete.expect &&
-        JSON.stringify(h.numbers) === JSON.stringify(itemToDelete.numbers)
+        h.id === itemToDelete.id ||
+        (h.timestamp === itemToDelete.timestamp && 
+         h.expect === itemToDelete.expect &&
+         JSON.stringify(h.numbers) === JSON.stringify(itemToDelete.numbers))
       );
       
       if(actualIdx === -1) {
@@ -6783,58 +6782,22 @@ const Business = {
 
   /**
    * 显示精选特码历史详情弹窗
-   * @param {number} displayIdx - 显示索引
+   * @param {number} filteredIdx - 筛选后的索引
    * @param {Event} e - 点击事件
    */
-  showSpecialHistoryDetail: (displayIdx, e) => {
+  showSpecialHistoryDetail: (filteredIdx, e) => {
     try {
       // 阻止事件冒泡，避免触发左滑删除
       e.stopPropagation();
       
-      const state = StateManager._state;
-      const history = state.specialHistory || [];
+      const filteredHistory = Business.getFilteredSpecialHistory();
       
-      // 获取当前筛选状态
-      const show10Period = document.querySelector('.special-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
-      const show20Period = document.querySelector('.special-period-btn[data-period="20"]')?.classList.contains('active') ?? false;
-      const show30Period = document.querySelector('.special-period-btn[data-period="30"]')?.classList.contains('active') ?? false;
-      const showAllPeriod = document.querySelector('.special-period-btn[data-period="all"]')?.classList.contains('active') ?? false;
-      const show5Num = document.querySelector('.special-num-btn[data-num="5"]')?.classList.contains('active') ?? true;
-      const show10Num = document.querySelector('.special-num-btn[data-num="10"]')?.classList.contains('active') ?? false;
-      const show15Num = document.querySelector('.special-num-btn[data-num="15"]')?.classList.contains('active') ?? false;
-      const show20Num = document.querySelector('.special-num-btn[data-num="20"]')?.classList.contains('active') ?? false;
-      
-      // 根据勾选状态筛选历史记录
-      const filteredHistory = history.filter(item => {
-        const period = item.analyzeLimit;
-        const periodText = item.selectedPeriodText || '';
-        const numCount = item.numCount || item.numbers.length;
-        
-        let periodMatch = false;
-        if(show10Period && (period === 10 || periodText.includes('10期'))) periodMatch = true;
-        if(show20Period && (period === 20 || periodText.includes('20期'))) periodMatch = true;
-        if(show30Period && (period === 30 || periodText.includes('30期'))) periodMatch = true;
-        if(showAllPeriod && periodText.includes('全年')) periodMatch = true;
-        
-        let numMatch = false;
-        if(show5Num && numCount === 5) numMatch = true;
-        if(show10Num && numCount === 10) numMatch = true;
-        if(show15Num && numCount === 15) numMatch = true;
-        if(show20Num && numCount === 20) numMatch = true;
-        
-        return periodMatch && numMatch;
-      });
-      
-      const isExpanded = state.specialHistoryExpanded || false;
-      const displayCount = isExpanded ? filteredHistory.length : Math.min(4, filteredHistory.length);
-      const displayHistory = filteredHistory.slice(0, displayCount);
-      
-      if(displayIdx < 0 || displayIdx >= displayHistory.length) {
+      if(filteredIdx < 0 || filteredIdx >= filteredHistory.length) {
         Toast.show('记录不存在');
         return;
       }
       
-      const item = displayHistory[displayIdx];
+      const item = filteredHistory[filteredIdx];
       
       // 生成号码详细信息
       let numbersDetailHtml = '';
