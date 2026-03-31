@@ -384,7 +384,7 @@ const Business = {
     });
     
     // 切换页面显示
-    const pages = ['filterPage', 'analysisPage', 'randomPage', 'profilePage'];
+    const pages = ['filterPage', 'analysisPage', 'recordPage', 'profilePage'];
     pages.forEach((pageId, i) => {
       const pageEl = document.getElementById(pageId);
       if(pageEl) {
@@ -641,8 +641,8 @@ const Business = {
         // 切换到预测历史页面
         Business.switchBottomNav(3);
         break;
-      case 'lottery':
-        // 切换到机选页面
+      case 'record':
+        // 切换到记录页面
         Business.switchBottomNav(2);
         break;
       case 'filter':

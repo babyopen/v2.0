@@ -302,46 +302,139 @@
     <div class="disclaimer">仅供娱乐，非投注建议</div>
   </div>
 
-  <!-- 机选页面 -->
-  <div class="page" id="randomPage" style="display:none">
-    <!-- 机选结果放在最上方 -->
-    <div class="card">
-      <div class="card-header"><h2>机选结果</h2></div>
-      <div class="card-body" id="smartResult" style="padding:20px;min-height:80px">
-        <div class="empty-tip" style="padding:30px 0">请先点击「按条件机选」生成号码</div>
+  <!-- 记录页面 -->
+  <div class="page" id="recordPage" style="display:none">
+    <!-- 标签栏 -->
+    <div class="analysis-tab-bar" style="margin-top:12px;">
+      <button class="analysis-tab-btn active" data-record-tab="favorites">我的收藏</button>
+      <button class="analysis-tab-btn" data-record-tab="prediction">预测历史</button>
+      <button class="analysis-tab-btn" data-record-tab="special">精选特码历史</button>
+      <button class="analysis-tab-btn" data-record-tab="notes">我的记录</button>
+    </div>
+
+    <!-- 我的收藏模块 -->
+    <div class="analysis-tab-panel active" id="recordFavoritesPanel">
+      <div class="card">
+        <div class="card-header">
+          <h2>我的收藏</h2>
+          <button class="btn-mini red" data-action="clearAllFavorites" aria-label="清空所有收藏">清空全部</button>
+        </div>
+        <div class="card-body">
+          <div id="recordFavoriteList" class="filter-save-list" role="list"></div>
+        </div>
       </div>
     </div>
-    <!-- 机选设置 -->
-    <div class="card" style="margin-top:16px">
-      <div class="card-header"><h2>机选设置</h2></div>
-      <div class="card-body" style="padding:20px">
-        <div style="margin-bottom:20px">
-          <label style="display:block;margin-bottom:12px;font-size:15px;font-weight:500">注数：</label>
-          <div class="num-input-group" style="margin:0 0 16px 0">
-            <input type="number" id="lotCount" min="1" max="49" value="5" inputmode="numeric" style="padding:14px 18px;font-size:16px">
-          </div>
-          <div class="quick-btns" style="margin:0">
-            <button class="quick-btn" data-count="1">1注</button>
-            <button class="quick-btn" data-count="3">3注</button>
-            <button class="quick-btn" data-count="5">5注</button>
-            <button class="quick-btn" data-count="10">10注</button>
+
+    <!-- 预测历史模块 -->
+    <div class="analysis-tab-panel" id="recordPredictionPanel" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <h2>预测历史</h2>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <button class="btn-mini" data-action="togglePredictionFiltersPanel" style="font-size:11px;">选择</button>
+            <button class="btn-mini red" data-action="clearZodiacPredictionHistory" style="font-size:11px;">清空</button>
           </div>
         </div>
-        <div class="btn-bar" style="justify-content:center;margin:24px 0 16px;gap:12px">
-          <button class="btn-line" data-action="runLottery" style="padding:12px 20px;font-size:15px">按条件机选</button>
-          <button class="btn-line" data-action="excludeLotteryResult" style="padding:12px 20px;font-size:15px">排除本次号码</button>
+        <div class="card-body">
+          <div id="recordPredictionFiltersPanel" class="filter-panel">
+            <div class="filter-panel-row">
+              <div class="filter-btn-group">
+                <button class="btn-mini prediction-period-btn active" data-period="10">10期</button>
+                <button class="btn-mini prediction-period-btn" data-period="20">20期</button>
+                <button class="btn-mini prediction-period-btn" data-period="30">30期</button>
+                <button class="btn-mini prediction-period-btn" data-period="all">全年</button>
+              </div>
+              <div class="filter-panel-buttons">
+                <button class="btn-mini" data-action="selectAllPredictionPeriods" style="font-size:11px;">全选</button>
+                <button class="btn-mini" data-action="resetPredictionPeriods" style="font-size:11px;">清空</button>
+                <button class="btn-mini" data-action="confirmPredictionFilters" style="background:var(--primary);color:#fff;">确认</button>
+              </div>
+            </div>
+          </div>
+          <div id="recordPredictionHistoryList">
+            <div class="empty-tip">暂无预测历史</div>
+          </div>
+          <div id="recordPredictionHistoryToggle" style="display:none;margin-top:8px;">
+            <button class="toggle-btn" data-action="toggleZodiacPredictionHistory" style="width:100%;">展开更多</button>
+          </div>
         </div>
-        <p style="font-size:13px;color:var(--sub-text);margin:16px 0 12px;text-align:center;line-height:1.5">点击号码可单独替换，所有号码自动去重</p>
-        <div class="disclaimer" style="margin-top:16px">机选结果仅为娱乐随机生成，非投注建议</div>
       </div>
     </div>
-    <!-- 机选历史 -->
-    <div class="card" style="margin-top:16px">
-      <div class="card-header">
-        <h2>机选历史</h2>
-        <button class="btn-mini red" data-action="clearSmartHistory">清空历史</button>
+
+    <!-- 精选特码历史模块 -->
+    <div class="analysis-tab-panel" id="recordSpecialPanel" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <h2>精选特码历史</h2>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <div class="mode-switch-btns" style="display:flex;gap:4px;margin-right:8px;">
+              <button class="btn-mini mode-btn special-history-mode-btn active" data-mode="all" data-action="switchSpecialHistoryMode" title="全部">全</button>
+              <button class="btn-mini mode-btn special-history-mode-btn" data-mode="hot" data-action="switchSpecialHistoryMode" title="🔥 热号模式">🔥</button>
+              <button class="btn-mini mode-btn special-history-mode-btn" data-mode="cold" data-action="switchSpecialHistoryMode" title="❄️ 冷号反弹">❄️</button>
+            </div>
+            <button class="btn-mini" data-action="toggleSpecialFiltersPanel" style="font-size:11px;">选择</button>
+            <button class="btn-mini red" data-action="clearSpecialHistory" aria-label="清空精选特码历史" style="font-size:11px;">清空</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="recordSpecialFiltersPanel" class="filter-panel">
+            <div class="filter-panel-row">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <div class="filter-btn-group">
+                  <button class="btn-mini special-period-btn active" data-period="10">10期</button>
+                  <button class="btn-mini special-period-btn" data-period="20">20期</button>
+                  <button class="btn-mini special-period-btn" data-period="30">30期</button>
+                  <button class="btn-mini special-period-btn" data-period="all">全年</button>
+                </div>
+                <div class="filter-btn-group">
+                  <button class="btn-mini special-num-btn active" data-num="5">5个</button>
+                  <button class="btn-mini special-num-btn" data-num="10">10个</button>
+                  <button class="btn-mini special-num-btn" data-num="15">15个</button>
+                  <button class="btn-mini special-num-btn" data-num="20">20个</button>
+                </div>
+              </div>
+              <div class="filter-panel-buttons">
+                <button class="btn-mini" data-action="selectAllSpecialFilters" style="font-size:11px;">全选</button>
+                <button class="btn-mini" data-action="resetSpecialFilters" style="font-size:11px;">清空</button>
+                <button class="btn-mini" data-action="confirmSpecialFilters" style="background:var(--primary);color:#fff;">确认</button>
+              </div>
+            </div>
+          </div>
+          <div id="recordSpecialHistoryList">
+            <div class="empty-tip">暂无精选特码历史</div>
+          </div>
+          <div id="recordSpecialHistoryToggle" style="display:none;margin-top:8px;">
+            <button class="toggle-btn" data-action="toggleSpecialHistory" style="width:100%;">展开更多</button>
+          </div>
+        </div>
       </div>
-      <div class="card-body" id="smartHistory" style="padding:16px 20px"></div>
+    </div>
+
+    <!-- 我的记录模块 -->
+    <div class="analysis-tab-panel" id="recordNotesPanel" style="display:none">
+      <div class="card">
+        <div class="card-header"><h2>添加记录</h2></div>
+        <div class="card-body" style="padding:20px">
+          <div style="margin-bottom:16px">
+            <label style="display:block;margin-bottom:8px;font-size:15px;font-weight:500">记录标题：</label>
+            <input type="text" id="recordTitle" placeholder="请输入记录标题" style="width:100%;padding:12px 16px;font-size:15px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box">
+          </div>
+          <div style="margin-bottom:16px">
+            <label style="display:block;margin-bottom:8px;font-size:15px;font-weight:500">记录内容：</label>
+            <textarea id="recordContent" placeholder="请输入记录内容" rows="4" style="width:100%;padding:12px 16px;font-size:15px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;resize:none"></textarea>
+          </div>
+          <div class="btn-bar" style="justify-content:center;margin:16px 0;gap:12px">
+            <button class="btn-line" data-action="addRecord" style="padding:12px 20px;font-size:15px;background:var(--primary);color:#fff">添加记录</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-header">
+          <h2>记录列表</h2>
+          <button class="btn-mini red" data-action="clearAllRecords">清空全部</button>
+        </div>
+        <div class="card-body" id="recordList" style="padding:16px 20px"></div>
+      </div>
     </div>
   </div>
 
@@ -769,7 +862,7 @@
 <div class="bottom-nav" role="navigation" aria-label="底部主导航">
   <div class="bottom-nav-item active" data-action="switchBottomNav" data-index="0">筛选</div>
   <div class="bottom-nav-item" data-action="switchBottomNav" data-index="1">分析</div>
-  <div class="bottom-nav-item" data-action="switchBottomNav" data-index="2">机选</div>
+  <div class="bottom-nav-item" data-action="switchBottomNav" data-index="2">记录</div>
   <div class="bottom-nav-item" data-action="switchBottomNav" data-index="3">我的</div>
 </div>
 
@@ -974,6 +1067,18 @@ const Utils = {
       if(el) fragment.appendChild(el);
     });
     return fragment;
+  },
+
+  /**
+   * HTML转义函数，防止XSS攻击
+   * @param {string} text - 要转义的文本
+   * @returns {string} 转义后的文本
+   */
+  escapeHtml: (text) => {
+    if (typeof text !== 'string') return text;
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 };
 
@@ -1184,12 +1289,8 @@ const StateManager = {
     currentZodiac: '',
     zodiacCycle: [],
     scrollTimer: null,
-    // 机选模块状态
-    lottery: {
-      smartHistory: [],
-      currentResult: [],
-      maxHistory: 30
-    },
+    // 记录模块状态
+    records: [],
     // 分析模块状态
     analysis: {
       historyData: [],
@@ -1323,7 +1424,7 @@ const Storage = {
     DATA_VERSION: 'dataVersion',
     HISTORY_CACHE: 'historyCache',
     HISTORY_CACHE_TIME: 'historyCacheTime',
-    LOTTERY_HISTORY: 'lotteryHistory',
+    RECORDS: 'records',
     SPECIAL_HISTORY: 'specialHistory'
   }),
 
@@ -1334,10 +1435,10 @@ const Storage = {
   CACHE_DURATION: 60 * 60 * 1000,
 
   /**
-   * 机选历史缓存有效期（毫秒）- 3天
+   * 记录缓存有效期（毫秒）- 永久
    * @readonly
    */
-  LOTTERY_HISTORY_DURATION: 3 * 24 * 60 * 60 * 1000,
+  RECORDS_DURATION: 0,
 
   /**
    * 精选特码历史缓存有效期（毫秒）- 30天
@@ -1510,51 +1611,27 @@ const Storage = {
   },
 
   /**
-   * 保存机选历史到本地存储
-   * @param {Array} history - 机选历史记录
+   * 保存记录到本地存储
+   * @param {Array} records - 记录列表
    */
-  saveLotteryHistory: (history) => {
-    const data = {
-      history: history,
-      timestamp: Date.now()
-    };
-    Storage.set(Storage.KEYS.LOTTERY_HISTORY, data);
+  saveRecords: (records) => {
+    Storage.set(Storage.KEYS.RECORDS, records);
   },
 
   /**
-   * 加载机选历史缓存
-   * @returns {Array} 过滤后的历史记录（只保留3天内的）
+   * 加载记录缓存
+   * @returns {Array} 记录列表
    */
-  loadLotteryHistory: () => {
-    const data = Storage.get(Storage.KEYS.LOTTERY_HISTORY, null);
-    if(!data || !data.history || !Array.isArray(data.history)) {
-      return [];
-    }
-
-    const now = Date.now();
-    const threeDaysAgo = now - Storage.LOTTERY_HISTORY_DURATION;
-
-    // 过滤掉超过3天的记录
-    const filteredHistory = data.history.filter(item => {
-      // 如果记录有时间戳，使用记录的时间戳；否则使用缓存保存时间
-      const itemTime = item.timestamp || data.timestamp || now;
-      return itemTime >= threeDaysAgo;
-    });
-
-    // 如果有过期的记录被过滤掉，更新缓存
-    if(filteredHistory.length < data.history.length) {
-      Storage.saveLotteryHistory(filteredHistory);
-      // 已清理过期记录
-    }
-
-    return filteredHistory;
+  loadRecords: () => {
+    const data = Storage.get(Storage.KEYS.RECORDS, []);
+    return Array.isArray(data) ? data : [];
   },
 
   /**
-   * 清除机选历史缓存
+   * 清除记录缓存
    */
-  clearLotteryHistory: () => {
-    Storage.remove(Storage.KEYS.LOTTERY_HISTORY);
+  clearRecords: () => {
+    Storage.remove(Storage.KEYS.RECORDS);
   },
 
   /**
@@ -2317,302 +2394,7 @@ const Business = {
     }
   },
 
-  // ====================== 机选模块相关 ======================
-  /**
-   * 生成随机号码
-   */
-  runLottery: () => {
-    try {
-      const state = StateManager._state;
-      const count = parseInt(document.getElementById('lotCount').value) || 5;
-      const filteredList = Filter.getFilteredList();
-      
-      if(filteredList.length === 0) {
-        Toast.show('无符合条件的号码');
-        return;
-      }
 
-      const results = [];
-      for(let i=0; i<count; i++) {
-        const randomIndex = Math.floor(Math.random() * filteredList.length);
-        results.push(filteredList[randomIndex]);
-      }
-
-      // 去重处理
-      const uniqueResults = [];
-      const seen = new Set();
-      results.forEach(item => {
-        if(!seen.has(item.num)) {
-          seen.add(item.num);
-          uniqueResults.push(item);
-        }
-      });
-
-      // 更新当前结果
-      StateManager.setState({ 
-        lottery: {
-          ...state.lottery,
-          currentResult: uniqueResults
-        }
-      });
-
-      // 渲染结果
-      Business.renderLotteryResult(uniqueResults);
-
-      // 添加到历史记录
-      Business.addToLotteryHistory(uniqueResults);
-
-      Toast.show(`已生成 ${uniqueResults.length} 注号码`);
-    } catch(e) {
-      console.error('机选失败', e);
-      Toast.show('机选失败，请重试');
-    }
-  },
-
-  /**
-   * 渲染机选结果
-   * @param {Array} results - 机选结果
-   */
-  renderLotteryResult: (results) => {
-    const container = document.getElementById('smartResult');
-    if(!container) return;
-
-    if(results.length === 0) {
-      container.innerHTML = '<div class="empty-tip">请先点击「按条件机选」生成号码</div>';
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    const lotteryNumsWrapper = document.createElement('div');
-    lotteryNumsWrapper.className = 'lottery-nums';
-    
-    results.forEach((item, index) => {
-      const numItem = document.createElement('div');
-      numItem.className = 'num-item';
-      numItem.dataset.num = item.num;
-      numItem.style.cursor = 'pointer';
-      numItem.innerHTML = `
-        <div class="num-ball ${item.color}色">${item.s}</div>
-        <div class="tag-zodiac">${item.zodiac}</div>
-      `;
-      lotteryNumsWrapper.appendChild(numItem);
-    });
-    
-    fragment.appendChild(lotteryNumsWrapper);
-
-    container.innerHTML = '';
-    container.appendChild(fragment);
-
-    // 添加点击事件，允许单独替换号码
-    container.querySelectorAll('.num-item').forEach(item => {
-      item.addEventListener('click', () => Business.replaceSingleNumber(item.dataset.num));
-    });
-  },
-
-  /**
-   * 替换单个号码
-   * @param {string} oldNum - 要替换的旧号码
-   */
-  replaceSingleNumber: (oldNum) => {
-    try {
-      const state = StateManager._state;
-      const filteredList = Filter.getFilteredList();
-      
-      if(filteredList.length === 0) {
-        Toast.show('无符合条件的号码');
-        return;
-      }
-
-      // 过滤掉当前结果中的号码
-      const availableNums = filteredList.filter(item => {
-        return !state.lottery.currentResult.some(result => result.num === item.num);
-      });
-
-      if(availableNums.length === 0) {
-        Toast.show('无可替换的号码');
-        return;
-      }
-
-      // 随机选择一个新号码
-      const randomIndex = Math.floor(Math.random() * availableNums.length);
-      const newNum = availableNums[randomIndex];
-
-      // 更新结果
-      const newResult = state.lottery.currentResult.map(item => {
-        return item.num === parseInt(oldNum) ? newNum : item;
-      });
-
-      StateManager.setState({ 
-        lottery: {
-          ...state.lottery,
-          currentResult: newResult
-        }
-      });
-
-      // 重新渲染
-      Business.renderLotteryResult(newResult);
-
-      Toast.show('已替换号码');
-    } catch(e) {
-      console.error('替换号码失败', e);
-      Toast.show('替换失败，请重试');
-    }
-  },
-
-  /**
-   * 添加到机选历史
-   * @param {Array} results - 机选结果
-   */
-  addToLotteryHistory: (results) => {
-    const state = StateManager._state;
-    const now = Date.now();
-    const historyItem = {
-      nums: results.map(item => item.num),
-      time: new Date().toLocaleString('zh-CN'),
-      timestamp: now
-    };
-
-    const newHistory = [historyItem, ...state.lottery.smartHistory];
-    // 限制历史记录数量
-    if(newHistory.length > state.lottery.maxHistory) {
-      newHistory.splice(state.lottery.maxHistory);
-    }
-
-    StateManager.setState({ 
-      lottery: {
-        ...state.lottery,
-        smartHistory: newHistory
-      }
-    });
-
-    // 保存到本地存储
-    Storage.saveLotteryHistory(newHistory);
-
-    // 渲染历史记录
-    Business.renderLotteryHistory(newHistory);
-  },
-
-  /**
-   * 渲染机选历史
-   * @param {Array} history - 历史记录
-   */
-  renderLotteryHistory: (history) => {
-    const container = document.getElementById('smartHistory');
-    if(!container) return;
-
-    if(history.length === 0) {
-      container.innerHTML = '<div class="empty-tip">暂无历史记录</div>';
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    history.forEach(item => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'history-item';
-      
-      // 生成号码和生肖的HTML
-      const numsHtml = item.nums.map(num => {
-        const attrs = DataQuery.getNumAttrs(num);
-        const s = num.toString().padStart(2, '0');
-        return `
-          <div class="num-item">
-            <div class="num-ball ${attrs.color}色">${s}</div>
-            <div class="tag-zodiac">${attrs.zodiac}</div>
-          </div>
-        `;
-      }).join('');
-      
-      wrapper.innerHTML = `
-        <div>
-          <div class="lottery-nums">${numsHtml}</div>
-          <div class="history-time">${item.time}</div>
-        </div>
-        <div class="history-btns">
-          <button class="btn-mini" data-action="copyHistoryItem" data-nums="${item.nums.join(',')}">复制</button>
-        </div>
-      `;
-      fragment.appendChild(wrapper);
-    });
-
-    container.innerHTML = '';
-    container.appendChild(fragment);
-  },
-
-  /**
-   * 复制机选结果
-   */
-
-
-  /**
-   * 排除本次号码
-   */
-  excludeLotteryResult: () => {
-    const state = StateManager._state;
-    const results = state.lottery.currentResult;
-    
-    if(results.length === 0) {
-      Toast.show('暂无结果可排除');
-      return;
-    }
-
-    const numsToExclude = results.map(item => item.num);
-    const newExcluded = [...new Set([...state.excluded, ...numsToExclude])];
-    const newHistory = [...state.excludeHistory];
-
-    numsToExclude.forEach(num => {
-      if(!state.excluded.includes(num)) {
-        newHistory.push([num, 'in']);
-      }
-    });
-
-    StateManager.setState({ 
-      excluded: newExcluded, 
-      excludeHistory: newHistory 
-    });
-
-    Toast.show(`已排除 ${numsToExclude.length} 个号码`);
-  },
-
-  /**
-   * 清空机选历史
-   */
-  clearSmartHistory: () => {
-    if(!confirm('确定清空机选历史？')) return;
-    
-    const state = StateManager._state;
-    StateManager.setState({ 
-      lottery: {
-        ...state.lottery,
-        smartHistory: []
-      }
-    });
-
-    // 清除本地缓存
-    Storage.clearLotteryHistory();
-
-    Business.renderLotteryHistory([]);
-    Toast.show('已清空机选历史');
-  },
-
-  /**
-   * 复制历史记录项
-   * @param {string} numsStr - 号码字符串
-   */
-  copyHistoryItem: (numsStr) => {
-    const nums = numsStr.split(',').map(Number);
-    const numStr = nums.map(num => num.toString().padStart(2, '0')).join(' ');
-    
-    // 剪贴板API兼容
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(numStr).then(() => {
-        Toast.show('复制成功');
-      }).catch(() => {
-        prompt('请手动复制以下号码：', numStr);
-      });
-    } else {
-      prompt('请手动复制以下号码：', numStr);
-    }
-  },
 
   /**
    * 清空所有收藏
@@ -2646,51 +2428,58 @@ const Business = {
   renderFavoriteList: () => {
     const state = StateManager._state;
     const favoriteList = document.getElementById('favoriteList');
+    const recordFavoriteList = document.getElementById('recordFavoriteList');
     const favorites = state.favorites;
 
-    if(!favorites.length){
-      favoriteList.innerHTML = "<div style='text-align:center;color:var(--sub-text)'>暂无收藏的方案</div>";
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-
-    favorites.forEach((item, index) => {
-      let previewList;
-      // 如果是精选特码收藏，优先使用 item.numbers
-      if(item.numbers && Array.isArray(item.numbers)) {
-        previewList = item.numbers.map(num => DataQuery.getNumAttrs(num));
-      } else {
-        previewList = Filter.getFilteredList(item.selected, item.excluded);
+    const renderToContainer = (container) => {
+      if(!container) return;
+      
+      if(!favorites.length){
+        container.innerHTML = "<div style='text-align:center;color:var(--sub-text)'>暂无收藏的方案</div>";
+        return;
       }
-      const previewFragment = Utils.createFragment(previewList, (num) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'num-item';
-        wrapper.innerHTML = `<div class="num-ball ${num.color}色">${num.s}</div><div class="tag-zodiac">${num.zodiac}</div>`;
-        return wrapper;
+
+      const fragment = document.createDocumentFragment();
+
+      favorites.forEach((item, index) => {
+        let previewList;
+        if(item.numbers && Array.isArray(item.numbers)) {
+          previewList = item.numbers.map(num => DataQuery.getNumAttrs(num));
+        } else {
+          previewList = Filter.getFilteredList(item.selected, item.excluded);
+        }
+        const previewFragment = Utils.createFragment(previewList, (num) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'num-item';
+          wrapper.innerHTML = `<div class="num-ball ${num.color}色">${num.s}</div><div class="tag-zodiac">${num.zodiac}</div>`;
+          return wrapper;
+        });
+
+        const itemWrapper = document.createElement('div');
+        itemWrapper.className = 'filter-item';
+        itemWrapper.setAttribute('role', 'listitem');
+        itemWrapper.innerHTML = `
+          <div class="filter-row">
+            <div class="filter-item-name">${item.name}</div>
+            <div class="filter-preview" style="flex: 1; min-width: 0;"></div>
+          </div>
+          <div class="filter-item-btns">
+            <button data-action="loadFavorite" data-index="${index}">加载</button>
+            <button data-action="renameFavorite" data-index="${index}">重命名</button>
+            <button data-action="copyFavorite" data-index="${index}">复制</button>
+            <button data-action="removeFavorite" data-index="${index}">移除</button>
+          </div>
+        `;
+        itemWrapper.querySelector('.filter-preview').appendChild(previewFragment);
+        fragment.appendChild(itemWrapper);
       });
 
-      const itemWrapper = document.createElement('div');
-      itemWrapper.className = 'filter-item';
-      itemWrapper.setAttribute('role', 'listitem');
-      itemWrapper.innerHTML = `
-        <div class="filter-row">
-          <div class="filter-item-name">${item.name}</div>
-          <div class="filter-preview" style="flex: 1; min-width: 0;"></div>
-        </div>
-        <div class="filter-item-btns">
-          <button data-action="loadFavorite" data-index="${index}">加载</button>
-          <button data-action="renameFavorite" data-index="${index}">重命名</button>
-          <button data-action="copyFavorite" data-index="${index}">复制</button>
-          <button data-action="removeFavorite" data-index="${index}">移除</button>
-        </div>
-      `;
-      itemWrapper.querySelector('.filter-preview').appendChild(previewFragment);
-      fragment.appendChild(itemWrapper);
-    });
+      container.innerHTML = '';
+      container.appendChild(fragment);
+    };
 
-    favoriteList.innerHTML = '';
-    favoriteList.appendChild(fragment);
+    renderToContainer(favoriteList);
+    renderToContainer(recordFavoriteList);
   },
 
   /**
@@ -2713,7 +2502,12 @@ const Business = {
     });
     
     // 切换页面显示
-    const pages = ['filterPage', 'analysisPage', 'randomPage', 'profilePage'];
+    const pages = ['filterPage', 'analysisPage', 'recordPage', 'profilePage'];
+    
+    // 如果切换到记录页面，自动渲染默认标签页（我的收藏）
+    if(index === 2) {
+      Business.renderFavoriteList();
+    }
     pages.forEach((pageId, i) => {
       const pageEl = document.getElementById(pageId);
       if(pageEl) {
@@ -4673,6 +4467,39 @@ const Business = {
     if(tab === 'zodiac') Business.renderZodiacAnalysis();
   },
 
+  switchRecordTab: (tab) => {
+    // 更新按钮状态
+    document.querySelectorAll('.analysis-tab-btn[data-record-tab]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.recordTab === tab);
+    });
+    
+    // 更新面板显示
+    const panels = {
+      'favorites': 'recordFavoritesPanel',
+      'prediction': 'recordPredictionPanel',
+      'special': 'recordSpecialPanel',
+      'notes': 'recordNotesPanel'
+    };
+    
+    Object.entries(panels).forEach(([key, id]) => {
+      const panel = document.getElementById(id);
+      if(panel) {
+        if(key === tab) {
+          panel.style.display = 'block';
+          panel.classList.add('active');
+        } else {
+          panel.style.display = 'none';
+          panel.classList.remove('active');
+        }
+      }
+    });
+    
+    // 特定标签页渲染（按需加载）
+    if(tab === 'favorites') Business.renderFavoriteList();
+    if(tab === 'prediction') Business.renderZodiacPredictionHistory();
+    if(tab === 'special') Business.renderSpecialHistory();
+  },
+
   /**
    * 加载更多历史
    */
@@ -5454,24 +5281,17 @@ const Business = {
    */
   renderZodiacPredictionHistory: () => {
     try {
-      const historyListEl = document.getElementById('zodiacPredictionHistoryList');
-      const toggleEl = document.getElementById('zodiacPredictionHistoryToggle');
-      if(!historyListEl) return;
-      
       const history = Storage.get('zodiacPredictionHistory', []);
       const state = StateManager._state;
       const historyData = state.analysis.historyData || [];
       
-      // 获取按钮选中状态（通过active类）
       const show10Period = document.querySelector('.prediction-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
       const show20Period = document.querySelector('.prediction-period-btn[data-period="20"]')?.classList.contains('active') ?? false;
       const show30Period = document.querySelector('.prediction-period-btn[data-period="30"]')?.classList.contains('active') ?? false;
       const showAllPeriod = document.querySelector('.prediction-period-btn[data-period="all"]')?.classList.contains('active') ?? false;
       
-      // 获取展开状态
       const isExpanded = state.zodiacPredictionHistoryExpanded || false;
       
-      // 创建期数到生肖的映射
       const expectToZodiac = {};
       historyData.forEach(dataItem => {
         if(dataItem.expect && dataItem.zodiac) {
@@ -5481,7 +5301,6 @@ const Business = {
         }
       });
       
-      // 根据勾选状态筛选历史记录
       const filteredHistory = history.filter(item => {
         const period = item.selectedPeriod;
         const periodText = item.selectedPeriodText || '';
@@ -5494,75 +5313,76 @@ const Business = {
         return false;
       });
       
-      // 确定要显示的记录数量
       const showCount = isExpanded ? filteredHistory.length : Math.min(4, filteredHistory.length);
       const displayHistory = filteredHistory.slice(0, showCount);
       
-      if(filteredHistory.length === 0) {
-        historyListEl.innerHTML = '<div style="text-align:center;color:var(--sub-text);padding:20px;font-size:13px;">暂无预测历史</div>';
-        if(toggleEl) toggleEl.style.display = 'none';
-        return;
-      }
-      
       let html = '';
-      displayHistory.forEach((item, idx) => {
-        // 获取该期实际开出的生肖
-        const actualZodiac = item.expect ? expectToZodiac[item.expect] : '';
-        
-        // 检查预测是否命中
-        let isMatch = false;
-        
-        if(actualZodiac && item.predictions) {
-          // 检查预测的生肖中是否包含实际开出的
-          isMatch = item.predictions.some(p => p.zodiac === actualZodiac);
-        }
-        
-        const predictions = item.predictions.map((p, i) => {
-          // 比对成功的生肖标签底色变蓝色
-          const isMatchZodiac = actualZodiac && p.zodiac === actualZodiac;
-          const tagClass = isMatchZodiac ? 'history-tag hit' : 'history-tag';
-          return `<span class="${tagClass}">${p.zodiac}</span>`;
-        }).join('');
-        
-        let titleText = '';
-        if(item.expect) {
-          titleText = `第${item.expect}期`;
-        }
-        if(item.selectedPeriodText) {
-          titleText += titleText ? ` · ${item.selectedPeriodText}` : item.selectedPeriodText;
-        }
-        
-        // 实际开奖生肖的标签类：命中变蓝，未命中变红
-        const actualZodiacClass = isMatch ? 'history-tag hit' : 'history-tag miss';
-        
-        html += `
-          <div style="padding:10px;border-bottom:1px solid var(--border);font-size:13px;background:var(--card);border-radius:8px;margin-bottom:8px;">
-            <div style="color:var(--sub-text);margin-bottom:8px;font-size:11px;display:flex;justify-content:space-between;align-items:center;">
-              <span>${titleText}</span>
-              <span>${item.time}</span>
-            </div>
-            <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;">
-              <div style="flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;">${predictions}</div>
-              ${actualZodiac ? `<span class="${actualZodiacClass}" style="flex-shrink:0;">${actualZodiac}</span>` : ''}
-            </div>
-          </div>
-        `;
-      });
-      
-      historyListEl.innerHTML = html;
-      
-      // 控制展开/折叠按钮的显示
-      if(toggleEl) {
-        if(filteredHistory.length > 4) {
-          toggleEl.style.display = 'block';
-          const toggleBtn = toggleEl.querySelector('button');
-          if(toggleBtn) {
-            toggleBtn.innerText = isExpanded ? '收起' : `展开更多（还有${filteredHistory.length - 4}条）`;
+      if(filteredHistory.length > 0) {
+        displayHistory.forEach((item, idx) => {
+          const actualZodiac = item.expect ? expectToZodiac[item.expect] : '';
+          let isMatch = false;
+          
+          if(actualZodiac && item.predictions) {
+            isMatch = item.predictions.some(p => p.zodiac === actualZodiac);
           }
-        } else {
-          toggleEl.style.display = 'none';
-        }
+          
+          const predictions = item.predictions.map((p, i) => {
+            const isMatchZodiac = actualZodiac && p.zodiac === actualZodiac;
+            const tagClass = isMatchZodiac ? 'history-tag hit' : 'history-tag';
+            return `<span class="${tagClass}">${p.zodiac}</span>`;
+          }).join('');
+          
+          let titleText = '';
+          if(item.expect) {
+            titleText = `第${item.expect}期`;
+          }
+          if(item.selectedPeriodText) {
+            titleText += titleText ? ` · ${item.selectedPeriodText}` : item.selectedPeriodText;
+          }
+          
+          const actualZodiacClass = isMatch ? 'history-tag hit' : 'history-tag miss';
+          
+          html += `
+            <div style="padding:10px;border-bottom:1px solid var(--border);font-size:13px;background:var(--card);border-radius:8px;margin-bottom:8px;">
+              <div style="color:var(--sub-text);margin-bottom:8px;font-size:11px;display:flex;justify-content:space-between;align-items:center;">
+                <span>${titleText}</span>
+                <span>${item.time}</span>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;">${predictions}</div>
+                ${actualZodiac ? `<span class="${actualZodiacClass}" style="flex-shrink:0;">${actualZodiac}</span>` : ''}
+              </div>
+            </div>
+          `;
+        });
       }
+      
+      const renderToContainer = (historyList, toggle) => {
+        if(!historyList) return;
+        
+        if(filteredHistory.length === 0) {
+          historyList.innerHTML = '<div style="text-align:center;color:var(--sub-text);padding:20px;font-size:13px;">暂无预测历史</div>';
+          if(toggle) toggle.style.display = 'none';
+          return;
+        }
+        
+        historyList.innerHTML = html;
+        
+        if(toggle) {
+          if(filteredHistory.length > 4) {
+            toggle.style.display = 'block';
+            const toggleBtn = toggle.querySelector('button');
+            if(toggleBtn) {
+              toggleBtn.innerText = isExpanded ? '收起' : `展开更多（还有${filteredHistory.length - 4}条）`;
+            }
+          } else {
+            toggle.style.display = 'none';
+          }
+        }
+      };
+      
+      renderToContainer(document.getElementById('zodiacPredictionHistoryList'), document.getElementById('zodiacPredictionHistoryToggle'));
+      renderToContainer(document.getElementById('recordPredictionHistoryList'), document.getElementById('recordPredictionHistoryToggle'));
     } catch(e) {
       console.error('渲染预测历史失败', e);
     }
@@ -6579,21 +6399,20 @@ const Business = {
   renderSpecialHistory: () => {
     try {
       const state = StateManager._state;
-      const historyListEl = document.getElementById('specialHistoryList');
-      const toggleEl = document.getElementById('specialHistoryToggle');
-      
-      if(!historyListEl) return;
-      
       const history = state.specialHistory;
       const isExpanded = state.specialHistoryExpanded || false;
       
       if(!history || history.length === 0) {
-        historyListEl.innerHTML = '<div style="text-align:center;color:var(--sub-text);padding:20px;font-size:13px;">暂无精选特码历史</div>';
-        if(toggleEl) toggleEl.style.display = 'none';
+        const renderEmpty = (historyList, toggle) => {
+          if(!historyList) return;
+          historyList.innerHTML = '<div style="text-align:center;color:var(--sub-text);padding:20px;font-size:13px;">暂无精选特码历史</div>';
+          if(toggle) toggle.style.display = 'none';
+        };
+        renderEmpty(document.getElementById('specialHistoryList'), document.getElementById('specialHistoryToggle'));
+        renderEmpty(document.getElementById('recordSpecialHistoryList'), document.getElementById('recordSpecialHistoryToggle'));
         return;
       }
       
-      // 获取按钮选中状态（通过active类）
       const show10Period = document.querySelector('.special-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
       const show20Period = document.querySelector('.special-period-btn[data-period="20"]')?.classList.contains('active') ?? false;
       const show30Period = document.querySelector('.special-period-btn[data-period="30"]')?.classList.contains('active') ?? false;
@@ -6603,20 +6422,15 @@ const Business = {
       const show15Num = document.querySelector('.special-num-btn[data-num="15"]')?.classList.contains('active') ?? false;
       const show20Num = document.querySelector('.special-num-btn[data-num="20"]')?.classList.contains('active') ?? false;
       
-      // 获取当前模式筛选
       const modeFilter = state.specialHistoryModeFilter || 'all';
-      // 获取当前系统模式
       const currentMode = state.analysis.specialMode || 'hot';
       const isAutoMode = currentMode === 'auto';
       
-      // 预计算不同期数的自动模式决策结果，避免重复计算
       const autoModeDecisions = new Map();
       if(isAutoMode) {
-        // 收集所有唯一的期数
         const uniquePeriods = new Set();
         history.forEach(item => uniquePeriods.add(item.analyzeLimit));
         
-        // 为每个期数计算自动模式决策
         uniquePeriods.forEach(period => {
           const data = Business.calcZodiacAnalysis(period);
           if(data && data.sortedZodiacs && data.sortedZodiacs.length > 0) {
@@ -6625,12 +6439,11 @@ const Business = {
         });
       }
       
-      // 根据勾选状态筛选历史记录
       const filteredHistory = history.filter(item => {
         const period = item.analyzeLimit;
         const periodText = item.selectedPeriodText || '';
         const numCount = item.numCount || item.numbers.length;
-        const itemMode = item.mode || 'hot'; // 默认为热号模式（兼容旧数据）
+        const itemMode = item.mode || 'hot';
         
         let periodMatch = false;
         if(show10Period && (period === 10 || periodText.includes('10期'))) periodMatch = true;
@@ -6644,22 +6457,17 @@ const Business = {
         if(show15Num && numCount === 15) numMatch = true;
         if(show20Num && numCount === 20) numMatch = true;
         
-        // 模式筛选
         let modeMatch = false;
         if(modeFilter === 'all') {
           if(isAutoMode) {
-            // 当系统处于自动模式时，默认只显示与自动模式决策结果匹配的记录
             const autoModeDecision = autoModeDecisions.get(period);
             modeMatch = autoModeDecision === itemMode;
           } else {
-            // 非自动模式：显示所有模式的数据
             modeMatch = true;
           }
         } else if(modeFilter === 'auto') {
-          // 自动模式筛选：显示所有模式的数据
           modeMatch = true;
         } else if(modeFilter === itemMode) {
-          // 特定模式：只显示对应模式的数据
           modeMatch = true;
         }
         
@@ -6674,15 +6482,11 @@ const Business = {
         const period = item.analyzeLimit;
         const periodText = item.selectedPeriodText || (period === 'all' || period >= 365 ? '全年数据' : `${period}期数据`);
         const numCount = item.numCount || item.numbers.length;
-        const itemMode = item.mode || 'hot'; // 获取模式，默认为热号模式
+        const itemMode = item.mode || 'hot';
         
-        // 生成模式标签
         const modeEmoji = itemMode === 'hot' ? '🔥' : itemMode === 'cold' ? '❄️' : '🔥';
-        
-        // 获取当前自动模式的决策结果
         const autoModeDecision = autoModeDecisions.get(period);
         
-        // 生成标题
         let titleText = '';
         if(item.expect) {
           titleText = `第${item.expect}期`;
@@ -6693,14 +6497,12 @@ const Business = {
           titleText = periodText;
         }
         
-        // 当系统处于自动模式且当前记录的模式与自动模式决策结果匹配时，显示自动模式图标
         if(isAutoMode && autoModeDecision === itemMode) {
           titleText += ` · ${numCount}个号 · ${modeEmoji} 🤖`;
         } else {
           titleText += ` · ${numCount}个号 · ${modeEmoji}`;
         }
         
-        // 生成号码显示
         let numbersHtml = '';
         item.numbers.forEach(num => {
           const isHit = item.hitNumbers && item.hitNumbers.includes(num);
@@ -6709,7 +6511,6 @@ const Business = {
           numbersHtml += `<span class="${tagClass}" onclick="Business.showSpecialHistoryDetail(${idx}, event)" style="cursor:pointer;">${String(num).padStart(2, '0')}</span>`;
         });
         
-        // 生成开奖号码显示 - 仅在开奖后显示
         let drawNumberHtml = '';
         if(item.drawResult !== null) {
           const isHit = item.hitCount > 0;
@@ -6739,19 +6540,26 @@ const Business = {
         `;
       });
       
-      historyListEl.innerHTML = html;
-      
-      if(toggleEl) {
-        if(filteredHistory.length > 4) {
-          toggleEl.style.display = 'block';
-          const toggleBtn = toggleEl.querySelector('button');
-          if(toggleBtn) {
-            toggleBtn.innerText = isExpanded ? '收起' : `展开更多（还有${filteredHistory.length - 4}条）`;
+      const renderToContainer = (historyList, toggle) => {
+        if(!historyList) return;
+        
+        historyList.innerHTML = html;
+        
+        if(toggle) {
+          if(filteredHistory.length > 4) {
+            toggle.style.display = 'block';
+            const toggleBtn = toggle.querySelector('button');
+            if(toggleBtn) {
+              toggleBtn.innerText = isExpanded ? '收起' : `展开更多（还有${filteredHistory.length - 4}条）`;
+            }
+          } else {
+            toggle.style.display = 'none';
           }
-        } else {
-          toggleEl.style.display = 'none';
         }
-      }
+      };
+      
+      renderToContainer(document.getElementById('specialHistoryList'), document.getElementById('specialHistoryToggle'));
+      renderToContainer(document.getElementById('recordSpecialHistoryList'), document.getElementById('recordSpecialHistoryToggle'));
     } catch(e) {
       console.error('渲染精选特码历史失败', e);
     }
@@ -7129,7 +6937,143 @@ const Business = {
   }
 };
 
-// ====================== 10. 事件绑定模块（统一事件委托，支持键盘操作）======================
+// ====================== 10. 记录功能模块 ======================
+/**
+ * 记录功能管理器
+ * @namespace Record
+ */
+const Record = {
+  /**
+   * 初始化记录模块
+   */
+  init() {
+    console.log('记录模块初始化');
+  },
+
+  /**
+   * 添加记录
+   */
+  addRecord: () => {
+    const titleEl = document.getElementById('recordTitle');
+    const contentEl = document.getElementById('recordContent');
+    const title = titleEl.value.trim();
+    const content = contentEl.value.trim();
+
+    if (!title) {
+      Toast.show('请输入记录标题');
+      return;
+    }
+
+    const record = {
+      id: Date.now(),
+      title: title,
+      content: content,
+      time: new Date().toLocaleString('zh-CN'),
+      timestamp: Date.now()
+    };
+
+    const state = StateManager._state;
+    const newRecords = [record, ...state.records];
+    StateManager.setState({ records: newRecords });
+
+    // 保存到本地存储
+    Storage.saveRecords(newRecords);
+
+    // 清空输入框
+    titleEl.value = '';
+    contentEl.value = '';
+
+    // 渲染记录列表
+    Record.renderRecordList(newRecords);
+
+    Toast.show('记录添加成功');
+  },
+
+  /**
+   * 渲染记录列表
+   * @param {Array} records - 记录列表
+   */
+  renderRecordList: (records) => {
+    const container = document.getElementById('recordList');
+    if (!container) return;
+
+    if (!records || records.length === 0) {
+      container.innerHTML = '<div class="empty-tip">暂无记录</div>';
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    records.forEach((record, index) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'history-item';
+      wrapper.innerHTML = `
+        <div style="flex: 1; min-width: 0;">
+          <div style="font-weight: 600; margin-bottom: 8px; color: var(--primary);">${Utils.escapeHtml(record.title)}</div>
+          <div style="color: var(--text); margin-bottom: 8px; white-space: pre-wrap; word-break: break-all;">${Utils.escapeHtml(record.content)}</div>
+          <div style="font-size: 12px; color: var(--sub-text);">${record.time}</div>
+        </div>
+        <div class="history-btns">
+          <button class="btn-mini" data-action="copyRecord" data-id="${record.id}">复制</button>
+          <button class="btn-mini red" data-action="deleteRecord" data-id="${record.id}">删除</button>
+        </div>
+      `;
+      fragment.appendChild(wrapper);
+    });
+
+    container.innerHTML = '';
+    container.appendChild(fragment);
+  },
+
+  /**
+   * 复制记录
+   * @param {number} id - 记录ID
+   */
+  copyRecord: (id) => {
+    const state = StateManager._state;
+    const record = state.records.find(r => r.id === id);
+    if (!record) return;
+
+    const text = `${record.title}\n\n${record.content}`;
+    Business.copyToClipboard(text);
+  },
+
+  /**
+   * 删除记录
+   * @param {number} id - 记录ID
+   */
+  deleteRecord: (id) => {
+    if (!confirm('确定删除该记录？')) return;
+
+    const state = StateManager._state;
+    const newRecords = state.records.filter(r => r.id !== id);
+    StateManager.setState({ records: newRecords });
+
+    // 保存到本地存储
+    Storage.saveRecords(newRecords);
+
+    // 渲染记录列表
+    Record.renderRecordList(newRecords);
+
+    Toast.show('已删除记录');
+  },
+
+  /**
+   * 清空所有记录
+   */
+  clearAllRecords: () => {
+    if (!confirm('确定清空所有记录？')) return;
+
+    StateManager.setState({ records: [] });
+
+    // 清除本地缓存
+    Storage.clearRecords();
+
+    Record.renderRecordList([]);
+    Toast.show('已清空所有记录');
+  }
+};
+
+// ====================== 11. 事件绑定模块（统一事件委托，支持键盘操作）======================
 /**
  * 全局事件绑定器
  * @namespace EventBinder
@@ -7298,11 +7242,11 @@ const EventBinder = {
       if(action === 'copyFavorite') Business.copyFavorite(Number(index));
       // 导航操作
       if(action === CONFIG.ACTIONS.SWITCH_NAV) Business.switchBottomNav(Number(actionBtn.dataset.index));
-      // 机选相关操作
-      if(action === 'runLottery') Business.runLottery();
-      if(action === 'excludeLotteryResult') Business.excludeLotteryResult();
-      if(action === 'clearSmartHistory') Business.clearSmartHistory();
-      if(action === 'copyHistoryItem') Business.copyHistoryItem(actionBtn.dataset.nums);
+      // 记录功能相关操作
+      if(action === 'addRecord') Record.addRecord();
+      if(action === 'copyRecord') Record.copyRecord(Number(actionBtn.dataset.id));
+      if(action === 'deleteRecord') Record.deleteRecord(Number(actionBtn.dataset.id));
+      if(action === 'clearAllRecords') Record.clearAllRecords();
       // 分析页面操作
       if(action === 'refreshHistory') Business.refreshHistory();
       if(action === 'syncAnalyze') Business.syncAnalyze();
@@ -7347,6 +7291,13 @@ const EventBinder = {
     const analysisTabBtn = target.closest('.analysis-tab-btn[data-analysis-tab]');
     if(analysisTabBtn){
       Business.switchAnalysisTab(analysisTabBtn.dataset.analysisTab);
+      return;
+    }
+
+    // 8. 记录标签页切换
+    const recordTabBtn = target.closest('.analysis-tab-btn[data-record-tab]');
+    if(recordTabBtn){
+      Business.switchRecordTab(recordTabBtn.dataset.recordTab);
       return;
     }
 
@@ -7480,18 +7431,7 @@ const EventBinder = {
       return;
     }
 
-    // 11. 机选快速选择按钮
-    const quickBtn = target.closest('.quick-btn[data-count]');
-    if(quickBtn){
-      const count = quickBtn.dataset.count;
-      const lotCountInput = document.getElementById('lotCount');
-      if(lotCountInput){
-        lotCountInput.value = count;
-      }
-      return;
-    }
-
-    // 12. 预测历史期数按钮
+    // 11. 预测历史期数按钮
     const predictionPeriodBtn = target.closest('.prediction-period-btn[data-period]');
     if(predictionPeriodBtn){
       Business.toggleButtonState(predictionPeriodBtn);
@@ -7647,16 +7587,11 @@ async function initApp() {
       // 已从缓存加载历史数据
     }
     
-    // 10. 加载机选历史缓存（自动清理3天前的记录）
-    const lotteryHistory = Storage.loadLotteryHistory();
-    if(lotteryHistory.length > 0) {
-      StateManager.setState({ 
-        lottery: {
-          ...StateManager._state.lottery,
-          smartHistory: lotteryHistory
-        }
-      }, false);
-      // 已从缓存加载机选历史记录
+    // 10. 加载记录缓存
+    const records = Storage.loadRecords();
+    if(records.length > 0) {
+      StateManager.setState({ records: records }, false);
+      // 已从缓存加载记录
     }
     
     // 11. 加载预测历史勾选状态并渲染
@@ -7675,8 +7610,8 @@ async function initApp() {
     // 13. 启动分析页面倒计时和自动刷新检查
     Business.startCountdown();
     Business.checkDrawTimeLoop();
-    // 13. 渲染机选历史记录（如果有缓存）
-    Business.renderLotteryHistory(StateManager._state.lottery.smartHistory);
+    // 13. 渲染记录列表（如果有缓存）
+    Record.renderRecordList(StateManager._state.records);
     // 14. 设置底部导航栏初始样式（筛选页面需要给快捷导航让位置）
     const bottomNav = document.querySelector('.bottom-nav');
     if(bottomNav) {

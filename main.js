@@ -37,8 +37,8 @@ const App = {
       // 初始化精选特码历史
       this.initSpecialHistory();
       
-      // 初始化机选模块
-      this.initLottery();
+      // 初始化记录模块
+      this.initRecord();
       
       // 启动应用
       this.start();
@@ -159,14 +159,14 @@ const App = {
   },
 
   /**
-   * 初始化机选模块
+   * 初始化记录模块
    */
-  initLottery() {
-    if(typeof Business !== 'undefined' && Business.initLotteryPage) {
-      // 机选模块会在切换到该标签时初始化
-      console.log('机选模块初始化完成');
+  initRecord() {
+    if(typeof Record !== 'undefined' && Record.init) {
+      // 记录模块初始化
+      console.log('记录模块初始化完成');
     } else {
-      console.warn('机选模块未加载');
+      console.warn('记录模块未加载');
     }
   },
 
