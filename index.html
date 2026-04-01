@@ -747,6 +747,28 @@
               <div id="zodiacPredictionGrid" class="zodiac-prediction-grid"></div>
             </div>
 
+            <!-- 生肖预测2.0模块 (ML模型) -->
+            <div class="zodiac-prediction-v2">
+              <div class="conclusion-title" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>🚀 生肖预测2.0 (ML模型)</span>
+                <button class="btn-mini ml-predict-btn" onclick="Business.runMLPrediction()" title="运行ML预测" style="background:#4CAF50;color:white;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                  ML预测
+                </button>
+              </div>
+              
+              <!-- ML预测结果区域 -->
+              <div id="mlPredictionResult" style="display:none;margin-bottom:15px;padding:15px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:8px;color:white;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <span style="font-weight:bold;font-size:16px;">🤖 ML模型预测结果</span>
+                  <span id="mlPredictionTime" style="font-size:12px;opacity:0.8;"></span>
+                </div>
+                <div id="mlPredictionContent"></div>
+              </div>
+            </div>
+
             <div class="selected-zodiacs">
               <div class="conclusion-title" style="display:flex;justify-content:space-between;align-items:center;">
                 <span>✨ 精选生肖</span>
@@ -6026,6 +6048,152 @@ const Business = {
     } catch(e) {
       console.error('保存预测历史失败', e);
     }
+  },
+
+  /**
+   * 生肖预测2.0 - 运行ML预测
+   */
+  runMLPrediction: async () => {
+    try {
+      // 显示加载状态
+      const mlBtn = document.querySelector('.ml-predict-btn');
+      if(mlBtn) {
+        mlBtn.disabled = true;
+        mlBtn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;">⚡</span> 预测中...';
+      }
+      
+      // 获取历史数据
+      const state = StateManager._state;
+      const historyData = state.analysis.historyData;
+      
+      if(!historyData || historyData.length < 50) {
+        alert('历史数据不足，需要至少50期数据才能进行ML预测');
+        if(mlBtn) {
+          mlBtn.disabled = false;
+          mlBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> ML预测`;
+        }
+        return;
+      }
+      
+      // 转换数据格式 - 直接传递生肖名称，与项目内一致
+      const formattedHistory = historyData.map(item => ({
+        period: parseInt(item.expect),
+        zodiac: item.zodiac  // 直接传递生肖名称字符串
+      }));
+      
+      // 调用ML API
+      const response = await fetch('http://localhost:5001/api/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          history: formattedHistory
+        })
+      });
+      
+      if(!response.ok) {
+        throw new Error('API请求失败');
+      }
+      
+      const result = await response.json();
+      
+      if(result.error) {
+        alert('ML预测错误: ' + result.error);
+        return;
+      }
+      
+      // 显示预测结果
+      Business.displayMLPredictionResult(result);
+      
+    } catch(error) {
+      console.error('ML预测失败:', error);
+      alert('ML预测失败，请确保ML API服务已启动 (python3 ml_api_server.py)');
+    } finally {
+      // 恢复按钮状态
+      const mlBtn = document.querySelector('.ml-predict-btn');
+      if(mlBtn) {
+        mlBtn.disabled = false;
+        mlBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> ML预测`;
+      }
+    }
+  },
+
+  /**
+   * 生肖预测2.0 - 显示ML预测结果
+   */
+  displayMLPredictionResult: (result) => {
+    const resultContainer = document.getElementById('mlPredictionResult');
+    const contentContainer = document.getElementById('mlPredictionContent');
+    const timeContainer = document.getElementById('mlPredictionTime');
+    
+    if(!resultContainer || !contentContainer) return;
+    
+    // 显示容器
+    resultContainer.style.display = 'block';
+    
+    // 更新时间
+    const now = new Date();
+    timeContainer.textContent = `预测时间: ${now.toLocaleString()}`;
+    
+    // 生成结果HTML
+    let html = '';
+    
+    // Top 3 推荐
+    if(result.top3 && result.top3.length > 0) {
+      html += '<div style="margin-bottom:15px;">';
+      html += '<div style="font-size:14px;margin-bottom:8px;opacity:0.9;">🏆 Top 3 推荐</div>';
+      html += '<div style="display:flex;gap:10px;flex-wrap:wrap;">';
+      
+      result.top3.forEach((item, index) => {
+        const rankEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+        const width = Math.round(item.probability * 100);
+        html += `
+          <div style="flex:1;min-width:100px;background:rgba(255,255,255,0.2);border-radius:8px;padding:10px;text-align:center;">
+            <div style="font-size:20px;margin-bottom:4px;">${rankEmoji}</div>
+            <div style="font-size:18px;font-weight:bold;margin-bottom:4px;">${item.name}</div>
+            <div style="font-size:12px;opacity:0.8;margin-bottom:4px;">${item.element}·${item.color}</div>
+            <div style="background:rgba(255,255,255,0.3);border-radius:4px;height:6px;margin-bottom:4px;">
+              <div style="background:#FFD700;height:100%;border-radius:4px;width:${width}%;"></div>
+            </div>
+            <div style="font-size:14px;font-weight:bold;">${(item.probability * 100).toFixed(2)}%</div>
+          </div>
+        `;
+      });
+      
+      html += '</div></div>';
+    }
+    
+    // 所有生肖概率条形图
+    if(result.predictions && result.predictions.length > 0) {
+      html += '<div style="margin-top:15px;">';
+      html += '<div style="font-size:14px;margin-bottom:8px;opacity:0.9;">📊 所有生肖概率分布</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(6, 1fr);gap:8px;">';
+      
+      result.predictions.forEach(item => {
+        const width = Math.round(item.probability * 100);
+        const isTop3 = result.top3.some(t => t.id === item.id);
+        const bgColor = isTop3 ? 'rgba(255,215,0,0.3)' : 'rgba(255,255,255,0.1)';
+        const borderColor = isTop3 ? '#FFD700' : 'transparent';
+        
+        html += `
+          <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:6px;padding:6px;text-align:center;font-size:11px;">
+            <div style="font-weight:bold;margin-bottom:2px;">${item.name}</div>
+            <div style="background:rgba(255,255,255,0.2);border-radius:2px;height:4px;margin-bottom:2px;">
+              <div style="background:${isTop3 ? '#FFD700' : '#fff'};height:100%;border-radius:2px;width:${width}%;"></div>
+            </div>
+            <div>${(item.probability * 100).toFixed(1)}%</div>
+          </div>
+        `;
+      });
+      
+      html += '</div></div>';
+    }
+    
+    contentContainer.innerHTML = html;
+    
+    // 滚动到结果区域
+    resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   },
 
   /**

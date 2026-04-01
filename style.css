@@ -1814,13 +1814,26 @@ input[type="checkbox"]{
   }
   
   .zodiac-prediction-score {
-    font-size: 11px;
+    font-size: 12px;
   }
   
   .zodiac-prediction-tag {
-    font-size: 8px;
-    padding: 1px 4px;
+    font-size: 10px;
+    padding: 2px 4px;
   }
+}
+
+/* 生肖预测2.0模块 (ML模型) */
+.zodiac-prediction-v2 {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.zodiac-prediction-v2 .conclusion-title {
+  margin-bottom: 12px;
 }
 
 /* ====================== 精选特码模式切换按钮样式 ====================== */
