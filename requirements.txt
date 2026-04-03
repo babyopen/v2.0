@@ -3,5 +3,3 @@ numpy
 xgboost
 scikit-learn
 Flask
-Flask-CORS
-requests

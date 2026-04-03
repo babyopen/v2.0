@@ -1,11 +1,7 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 import sys
 import os
-import requests
-import json
-from datetime import datetime, timedelta
-import logging
+import time
 
 # 确保可以导入python目录中的模块
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'python')))
@@ -13,39 +9,19 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'p
 from zodiac_ml_predictor import load_model, predict_next
 import pandas as pd
 
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
 app = Flask(__name__)
 
-# 配置静态文件目录
-app.static_folder = os.path.join(os.path.dirname(__file__), '..')
-app.static_url_path = '/static'
-
-# 配置CORS，允许跨域请求
-CORS(app, origins=['*'], methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
-
-# 全局变量存储模型
-model = None
-
-# 全局变量存储历史数据缓存
-history_cache = {}
-cache_expiry = {}
-
-# 外部API配置
-EXTERNAL_API = {
-    'HISTORY': 'https://history.macaumarksix.com/history/macaujc2/y/'
+# 常量定义
+ZODIAC_MAP = {
+    1: '马', 2: '蛇', 3: '龙', 4: '兔', 5: '虎', 6: '牛',
+    7: '鼠', 8: '猪', 9: '狗', 10: '鸡', 11: '猴', 12: '羊'
 }
 
-# 缓存有效期（秒）
-CACHE_DURATION = 3600
-
-# 最大缓存条目数
-MAX_CACHE_ITEMS = 100
+# 全局变量
+model = None
+cached_data = None
+cached_data_time = 0
+DATA_CACHE_TTL = 60  # 数据缓存时间（秒）
 
 def load_model_once():
     """只加载模型一次"""
@@ -55,68 +31,31 @@ def load_model_once():
             # 模型文件路径
             model_path = os.path.join(os.path.dirname(__file__), '..', 'zodiac_model.pkl')
             model = load_model(model_path)
-            logger.info("模型加载成功")
+            print("模型加载成功")
         except Exception as e:
-            logger.error(f"模型加载失败: {str(e)}")
+            print(f"模型加载失败: {str(e)}")
             model = None
 
-def get_cached_data(key):
-    """获取缓存数据"""
-    if key in history_cache:
-        expiry = cache_expiry.get(key, 0)
-        if datetime.now().timestamp() < expiry:
-            return history_cache[key]
-        else:
-            # 缓存过期，删除
-            del history_cache[key]
-            del cache_expiry[key]
-    return None
-
-def set_cached_data(key, data):
-    """设置缓存数据"""
-    # 检查缓存大小，如果超过限制，删除最旧的缓存
-    if len(history_cache) >= MAX_CACHE_ITEMS:
-        # 找出最早过期的缓存
-        oldest_key = min(cache_expiry, key=cache_expiry.get)
-        if oldest_key in history_cache:
-            del history_cache[oldest_key]
-            del cache_expiry[oldest_key]
-            logger.info(f"缓存达到上限，删除最旧的缓存键: {oldest_key}")
+def get_history_data():
+    """获取历史数据，带缓存机制"""
+    global cached_data, cached_data_time
+    current_time = time.time()
     
-    history_cache[key] = data
-    cache_expiry[key] = datetime.now().timestamp() + CACHE_DURATION
-
-@app.route('/', methods=['GET'])
-def home():
-    """根路由，返回前端页面"""
+    # 检查缓存是否有效
+    if cached_data is not None and (current_time - cached_data_time) < DATA_CACHE_TTL:
+        return cached_data
+    
+    # 读取历史数据
+    data_path = os.path.join(os.path.dirname(__file__), '..', 'lottery_history.csv')
     try:
-        index_path = os.path.join(os.path.dirname(__file__), '..', 'index.html')
-        with open(index_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        return content, 200, {'Content-Type': 'text/html'}
+        df = pd.read_csv(data_path)
+        # 更新缓存
+        cached_data = df
+        cached_data_time = current_time
+        return df
     except Exception as e:
-        logger.error(f"返回前端页面失败: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'INTERNAL_ERROR',
-            'message': f'返回前端页面失败: {str(e)}'
-        }), 500
-
-@app.route('/style.css', methods=['GET'])
-def style_css():
-    """返回样式文件"""
-    try:
-        style_path = os.path.join(os.path.dirname(__file__), '..', 'style.css')
-        with open(style_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        return content, 200, {'Content-Type': 'text/css'}
-    except Exception as e:
-        logger.error(f"返回样式文件失败: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'INTERNAL_ERROR',
-            'message': f'返回样式文件失败: {str(e)}'
-        }), 500
+        print(f"读取历史数据失败: {str(e)}")
+        return None
 
 @app.route('/api/health', methods=['GET'])
 def health():
@@ -132,21 +71,74 @@ def predict():
         if model is None:
             return jsonify({'error': '模型加载失败'}), 500
         
-        # 读取历史数据
-        data_path = os.path.join(os.path.dirname(__file__), '..', 'lottery_history.csv')
-        df = pd.read_csv(data_path)
+        # 获取请求数据
+        data = request.get_json()
+        
+        # 优先使用前端传递的历史数据
+        if data and 'history' in data and data['history']:
+            # 处理前端传递的历史数据
+            history_data = data['history']
+            
+            # 转换数据格式
+            periods = []
+            zodiacs = []
+            
+            for item in history_data:
+                if 'period' in item and 'zodiac' in item:
+                    # 处理前端传递的生肖名称，转换为数字
+                    zodiac_name = item['zodiac']
+                    # 反向映射：生肖名称到数字
+                    zodiac_num = None
+                    for num, name in ZODIAC_MAP.items():
+                        if name == zodiac_name:
+                            zodiac_num = num
+                            break
+                    
+                    if zodiac_num:
+                        periods.append(item['period'])
+                        zodiacs.append(zodiac_num)
+            
+            # 创建DataFrame
+            if periods and zodiacs:
+                df = pd.DataFrame({'period': periods, 'zodiac': zodiacs})
+                # 按期号排序
+                df = df.sort_values('period').reset_index(drop=True)
+                print(f"使用前端传递的历史数据: {len(df)} 条记录")
+            else:
+                # 前端数据无效，使用本地数据
+                df = get_history_data()
+                if df is None:
+                    return jsonify({'error': '无法读取历史数据'}), 500
+        else:
+            # 没有前端数据，使用本地数据
+            df = get_history_data()
+            if df is None:
+                return jsonify({'error': '无法读取历史数据'}), 500
         
         # 预测下一期
         if len(df) == 0:
             return jsonify({'error': '历史数据为空'}), 400
         
+        # 检查数据量是否足够
+        if len(df) < 50:
+            # 数据量不足，使用本地数据作为补充
+            local_df = get_history_data()
+            if local_df is not None and len(local_df) > len(df):
+                df = local_df
+                print(f"数据量不足，使用本地数据: {len(df)} 条记录")
+        
         last_row = df.iloc[-1]
         predictions = predict_next(model, last_row, df)
         
-        # 生肖映射
-        zodiac_map = {
-            1: '马', 2: '蛇', 3: '龙', 4: '兔', 5: '虎', 6: '牛',
-            7: '鼠', 8: '猪', 9: '狗', 10: '鸡', 11: '猴', 12: '羊'
+        # 生肖元素和颜色映射
+        zodiac_element_map = {
+            1: '火', 2: '火', 3: '土', 4: '木', 5: '木', 6: '土',
+            7: '水', 8: '水', 9: '土', 10: '金', 11: '金', 12: '土'
+        }
+        
+        zodiac_color_map = {
+            1: '红', 2: '红', 3: '绿', 4: '绿', 5: '绿', 6: '蓝',
+            7: '蓝', 8: '蓝', 9: '红', 10: '红', 11: '红', 12: '绿'
         }
         
         # 格式化结果
@@ -154,9 +146,11 @@ def predict():
         for i, prob in enumerate(predictions):
             zodiac_num = i + 1
             results.append({
-                'name': zodiac_map.get(zodiac_num, f'未知{zodiac_num}'),
+                'name': ZODIAC_MAP.get(zodiac_num, f'未知{zodiac_num}'),
                 'number': zodiac_num,
-                'probability': float(prob)
+                'probability': float(prob),
+                'element': zodiac_element_map.get(zodiac_num, ''),
+                'color': zodiac_color_map.get(zodiac_num, '')
             })
         
         # 按概率排序
@@ -170,259 +164,57 @@ def predict():
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"预测失败: {str(e)}")
+        return jsonify({'error': '预测过程中发生错误'}), 500
 
 @app.route('/api/zodiac-mapping', methods=['GET'])
 def zodiac_mapping():
     """生肖映射表"""
-    zodiac_map = {
-        1: '马', 2: '蛇', 3: '龙', 4: '兔', 5: '虎', 6: '牛',
-        7: '鼠', 8: '猪', 9: '狗', 10: '鸡', 11: '猴', 12: '羊'
-    }
-    return jsonify({'zodiacs': zodiac_map})
+    return jsonify({'zodiacs': ZODIAC_MAP})
 
-@app.route('/api/lottery/latest', methods=['GET'])
-def get_latest_lottery():
-    """获取最新开奖记录"""
+# 缓存前端文件内容
+cached_frontend_files = {}
+
+@app.route('/', methods=['GET'])
+def index():
+    """根路径，返回前端页面"""
     try:
-        year = datetime.now().year
-        cache_key = f'latest_{year}'
+        # 检查缓存
+        if 'index.html' in cached_frontend_files:
+            return cached_frontend_files['index.html']
         
-        # 尝试从缓存获取
-        cached_data = get_cached_data(cache_key)
-        if cached_data:
-            return jsonify({
-                'status': 'success',
-                'data': cached_data
-            })
+        # 读取前端index.html文件
+        html_path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'index.html')
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
         
-        # 从外部API获取数据
-        url = f"{EXTERNAL_API['HISTORY']}{year}"
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        
-        data = response.json()
-        raw_data = data.get('data', [])
-        
-        # 过滤无效数据
-        filtered_data = []
-        for item in raw_data:
-            if not item.get('expect') or not item.get('openCode'):
-                continue
-            
-            # 验证开奖号码格式
-            open_code = item['openCode']
-            numbers = open_code.split(',')
-            if len(numbers) != 7:
-                continue
-            
-            # 验证每个号码都是有效的数字
-            valid = True
-            for num in numbers:
-                if not num.isdigit() or int(num) < 1 or int(num) > 49:
-                    valid = False
-                    break
-            
-            if valid:
-                filtered_data.append(item)
-        
-        # 去重并按期号降序排序
-        unique_map = {}
-        for item in filtered_data:
-            try:
-                expect_num = int(item['expect'])
-                unique_map[expect_num] = item
-            except ValueError:
-                continue
-        
-        sorted_data = sorted(unique_map.values(), 
-                           key=lambda x: int(x['expect']), 
-                           reverse=True)
-        
-        # 缓存数据
-        set_cached_data(cache_key, sorted_data[:20])  # 只缓存最近20条
-        
-        return jsonify({
-            'status': 'success',
-            'data': sorted_data[:20]
-        })
-        
-    except requests.RequestException as e:
-        logger.error(f"外部API调用失败: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'API_ERROR',
-            'message': f'外部API调用失败: {str(e)}'
-        }), 500
-    except ValueError as e:
-        logger.error(f"数据格式错误: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'DATA_ERROR',
-            'message': f'数据格式错误: {str(e)}'
-        }), 400
+        # 缓存文件内容
+        cached_frontend_files['index.html'] = html_content
+        return html_content
     except Exception as e:
-        logger.error(f"处理数据失败: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'INTERNAL_ERROR',
-            'message': f'处理数据失败: {str(e)}'
-        }), 500
+        print(f"读取前端文件失败: {str(e)}")
+        return jsonify({'error': '无法加载前端页面'}), 500
 
-@app.route('/api/lottery/history', methods=['GET'])
-def get_lottery_history():
-    """获取历史开奖记录"""
+@app.route('/style.css', methods=['GET'])
+def style_css():
+    """返回前端样式文件"""
     try:
-        year = request.args.get('year', str(datetime.now().year))
-        cache_key = f'history_{year}'
+        # 检查缓存
+        if 'style.css' in cached_frontend_files:
+            return cached_frontend_files['style.css']
         
-        # 尝试从缓存获取
-        cached_data = get_cached_data(cache_key)
-        if cached_data:
-            return jsonify({
-                'status': 'success',
-                'data': cached_data
-            })
+        # 读取前端style.css文件
+        css_path = os.path.join(os.path.dirname(__file__), '..', 'frontend', 'style.css')
+        with open(css_path, 'r', encoding='utf-8') as f:
+            css_content = f.read()
         
-        # 从外部API获取数据
-        url = f"{EXTERNAL_API['HISTORY']}{year}"
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        
-        data = response.json()
-        raw_data = data.get('data', [])
-        
-        # 过滤无效数据
-        filtered_data = []
-        for item in raw_data:
-            if not item.get('expect') or not item.get('openCode'):
-                continue
-            
-            # 验证开奖号码格式
-            open_code = item['openCode']
-            numbers = open_code.split(',')
-            if len(numbers) != 7:
-                continue
-            
-            # 验证每个号码都是有效的数字
-            valid = True
-            for num in numbers:
-                if not num.isdigit() or int(num) < 1 or int(num) > 49:
-                    valid = False
-                    break
-            
-            if valid:
-                filtered_data.append(item)
-        
-        # 去重并按期号降序排序
-        unique_map = {}
-        for item in filtered_data:
-            try:
-                expect_num = int(item['expect'])
-                unique_map[expect_num] = item
-            except ValueError:
-                continue
-        
-        sorted_data = sorted(unique_map.values(), 
-                           key=lambda x: int(x['expect']), 
-                           reverse=True)
-        
-        # 缓存数据
-        set_cached_data(cache_key, sorted_data)
-        
-        return jsonify({
-            'status': 'success',
-            'data': sorted_data
-        })
-        
-    except requests.RequestException as e:
-        logger.error(f"外部API调用失败: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'API_ERROR',
-            'message': f'外部API调用失败: {str(e)}'
-        }), 500
-    except ValueError as e:
-        logger.error(f"数据格式错误: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'DATA_ERROR',
-            'message': f'数据格式错误: {str(e)}'
-        }), 400
+        # 缓存文件内容
+        cached_frontend_files['style.css'] = (css_content, 200, {'Content-Type': 'text/css'})
+        return css_content, 200, {'Content-Type': 'text/css'}
     except Exception as e:
-        logger.error(f"处理数据失败: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'INTERNAL_ERROR',
-            'message': f'处理数据失败: {str(e)}'
-        }), 500
+        print(f"读取样式文件失败: {str(e)}")
+        return jsonify({'error': '无法加载样式文件'}), 500
 
-@app.route('/api/lottery/zodiac', methods=['GET'])
-def get_zodiac_history():
-    """获取生肖开奖记录（用于模型训练）"""
-    try:
-        # 读取本地CSV文件
-        data_path = os.path.join(os.path.dirname(__file__), '..', 'lottery_history.csv')
-        df = pd.read_csv(data_path)
-        
-        # 转换为JSON格式
-        history_data = []
-        for _, row in df.iterrows():
-            history_data.append({
-                'period': int(row['period']),
-                'zodiac': int(row['zodiac'])
-            })
-        
-        return jsonify({
-            'status': 'success',
-            'data': history_data
-        })
-        
-    except FileNotFoundError as e:
-        logger.error(f"文件不存在: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'FILE_ERROR',
-            'message': f'文件不存在: {str(e)}'
-        }), 404
-    except pd.errors.EmptyDataError as e:
-        logger.error(f"文件为空: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'DATA_ERROR',
-            'message': f'文件为空: {str(e)}'
-        }), 400
-    except Exception as e:
-        logger.error(f"读取生肖历史数据失败: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'INTERNAL_ERROR',
-            'message': f'读取生肖历史数据失败: {str(e)}'
-        }), 500
-
-@app.route('/api/cache/clear', methods=['POST'])
-def clear_cache():
-    """清空所有缓存"""
-    try:
-        global history_cache, cache_expiry
-        history_cache.clear()
-        cache_expiry.clear()
-        logger.info("缓存已清空")
-        return jsonify({
-            'status': 'success',
-            'message': '缓存已清空'
-        })
-    except Exception as e:
-        logger.error(f"清空缓存失败: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'code': 'INTERNAL_ERROR',
-            'message': f'清空缓存失败: {str(e)}'
-        }), 500
-
-# Vercel 要求的入口点
+# 应用入口点
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=3000)
-
-# 明确导出 app 变量，供 Vercel 使用
-handler = app
+    app.run(debug=False, host='0.0.0.0', port=8000)

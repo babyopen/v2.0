@@ -645,9 +645,9 @@ def main():
     print("=" * 60)
     
     # 1. 加载数据
-    df = load_data('lottery_history.csv')
+    df = load_data('real_lottery_history.csv')
     if df is None:
-        print("请确保 lottery_history.csv 文件存在")
+        print("请确保 real_lottery_history.csv 文件存在")
         return
     
     # 2. 构建特征
