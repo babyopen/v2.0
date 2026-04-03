@@ -682,6 +682,146 @@ body{
   .modal-header {
     padding-right:2.5rem;
   }
+  
+  /* 预测统计卡片响应式设计 */
+  #predictionStatisticsBody {
+    padding:12px 16px 16px;
+  }
+  
+  /* 顶部统计卡片网格 - 2列布局 */
+  #predictionStatisticsBody > div:first-child {
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+  }
+  
+  /* 顶部统计卡片样式 */
+  #predictionStatisticsBody > div:first-child > div {
+    padding:12px;
+  }
+  
+  /* 顶部统计卡片数字 */
+  #predictionStatisticsBody > div:first-child > div > div:first-child {
+    font-size:22px;
+  }
+  
+  /* 顶部统计卡片标签 */
+  #predictionStatisticsBody > div:first-child > div > div:last-child {
+    font-size:10px;
+  }
+  
+  /* 分类统计网格 - 单列布局 */
+  #predictionStatisticsBody > div:nth-child(2) > div {
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+  
+  /* 分类统计卡片样式 */
+  #predictionStatisticsBody > div:nth-child(2) > div > div {
+    padding:10px;
+  }
+  
+  /* 分类统计卡片标题 */
+  #predictionStatisticsBody .card-header h2 {
+    font-size:14px;
+  }
+  
+  /* 分类统计卡片内容 */
+  #predictionStatisticsBody span {
+    font-size:13px;
+  }
+  
+  /* 分类统计卡片命中率 */
+  #predictionStatisticsBody span[style*="font-size:16px"] {
+    font-size:14px !important;
+  }
+  
+  /* 刷新按钮 */
+  #predictionStatisticsBody .btn-mini {
+    font-size:10px;
+    padding:4px 8px;
+  }
+  
+  /* 卡片头部间距 */
+  .card-header {
+    padding:12px 16px;
+  }
+  
+  /* 卡片头部标题 */
+  .card-header h2 {
+    font-size:14px;
+  }
+  
+  /* 卡片内容间距 */
+  .card-body {
+    padding:12px 16px 16px;
+  }
+  
+  /* 确保在极小屏幕上的适应性 */
+  @media (max-width: 375px) {
+    /* 顶部统计卡片 - 1列布局 */
+    #predictionStatisticsBody > div:first-child {
+      grid-template-columns:1fr;
+    }
+    
+    /* 顶部统计卡片高度 */
+    #predictionStatisticsBody > div:first-child > div {
+      min-height:80px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+    
+    /* 分类统计卡片内容 */
+    #predictionStatisticsBody > div:nth-child(2) > div > div {
+      padding:8px;
+    }
+    
+    /* 分类统计卡片文本 */
+    #predictionStatisticsBody span {
+      font-size:12px;
+    }
+  }
+  
+  /* 顶部统计卡片响应式优化 */
+  @media (max-width: 767px) {
+    /* 顶部统计卡片文本 */
+    #predictionStatisticsBody > div:first-child > div > div:first-child {
+      font-size:20px !important;
+    }
+    
+    #predictionStatisticsBody > div:first-child > div > div:last-child {
+      font-size:11px !important;
+    }
+    
+    /* 确保卡片有足够的点击区域 */
+    #predictionStatisticsBody > div:first-child > div {
+      min-height:70px;
+      cursor:pointer;
+      transition:transform 0.2s ease;
+    }
+    
+    #predictionStatisticsBody > div:first-child > div:hover {
+      transform:scale(1.02);
+    }
+  }
+  
+  /* 极小屏幕设备（< 320px） */
+  @media (max-width: 320px) {
+    /* 进一步减小字体 */
+    #predictionStatisticsBody > div:first-child > div > div:first-child {
+      font-size:18px !important;
+    }
+    
+    #predictionStatisticsBody > div:first-child > div > div:last-child {
+      font-size:10px !important;
+    }
+    
+    /* 减小卡片高度 */
+    #predictionStatisticsBody > div:first-child > div {
+      min-height:60px;
+      padding:10px !important;
+    }
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1699,161 +1839,6 @@ input[type="checkbox"]{
   
   .zodiac-prediction-score {
     font-size: 12px;
-  }
-}
-
-/* 预测统计样式 */
-.prediction-stats-overview {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-
-.prediction-stat-card {
-  padding: 16px;
-  border-radius: 12px;
-  color: white;
-  text-align: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.prediction-stat-card.total {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.prediction-stat-card.hits {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-}
-
-.prediction-stat-card.rate {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.prediction-stat-card.pending {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.prediction-stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.prediction-stat-label {
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-.prediction-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.prediction-category-card {
-  padding: 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
-.prediction-category-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-  color: var(--sub-text);
-}
-
-.prediction-category-total {
-  font-weight: 600;
-}
-
-.prediction-category-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.prediction-category-label {
-  color: var(--sub-text);
-}
-
-.prediction-category-value {
-  font-weight: 600;
-}
-
-.prediction-category-value.hit {
-  color: #4CAF50;
-}
-
-.prediction-category-value.miss {
-  color: #F44336;
-}
-
-.prediction-category-value.pending {
-  color: #FF9800;
-}
-
-.prediction-category-value.rate {
-  color: var(--primary);
-  font-weight: 700;
-  font-size: 16px;
-}
-
-.prediction-category-rate {
-  padding-top: 6px;
-  border-top: 1px solid var(--border);
-}
-
-/* 响应式布局 */
-@media (max-width: 768px) {
-  .prediction-stats-overview {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .prediction-stats-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .prediction-stat-value {
-    font-size: 24px;
-  }
-  
-  .prediction-stat-card {
-    padding: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .prediction-stats-overview {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-  
-  .prediction-stat-card {
-    padding: 10px;
-  }
-  
-  .prediction-stat-value {
-    font-size: 20px;
-  }
-  
-  .prediction-stat-label {
-    font-size: 11px;
-  }
-  
-  .prediction-category-card {
-    padding: 10px;
-  }
-  
-  .prediction-category-header {
-    font-size: 13px;
-  }
-  
-  .prediction-category-value.rate {
-    font-size: 14px;
   }
 }
 
