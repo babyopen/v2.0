@@ -633,7 +633,6 @@ def load_model(file_path='zodiac_model.pkl'):
     """
     with open(file_path, 'rb') as f:
         model = pickle.load(f)
-    print(f"模型已加载: {file_path}")
     return model
 
 
