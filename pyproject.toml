@@ -1,22 +1,11 @@
-[tool.poetry]
+[project]
 name = "zodiac-lottery-predictor"
 version = "0.1.0"
 description = "生肖彩票预测 API"
-authors = ["Your Name <your.email@example.com>"]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-pandas = "*"
-numpy = "*"
-xgboost = "*"
-scikit-learn = "*"
-Flask = "*"
-Flask-CORS = "*"
-requests = "*"
-
-[tool.poetry.scripts]
+[project.scripts]
 app = "api.index:app"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
