@@ -7131,22 +7131,22 @@ const Business = {
       let html = '';
 
       html += `
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
-          <div style="padding:16px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:12px;color:white;text-align:center;">
-            <div style="font-size:28px;font-weight:bold;">${stats.total}</div>
-            <div style="font-size:12px;opacity:0.9;">总预测数</div>
+        <div class="prediction-stats-overview">
+          <div class="prediction-stat-card total">
+            <div class="prediction-stat-value">${stats.total}</div>
+            <div class="prediction-stat-label">总预测数</div>
           </div>
-          <div style="padding:16px;background:linear-gradient(135deg,#11998e 0%,#38ef7d 100%);border-radius:12px;color:white;text-align:center;">
-            <div style="font-size:28px;font-weight:bold;">${stats.hits}</div>
-            <div style="font-size:12px;opacity:0.9;">命中数</div>
+          <div class="prediction-stat-card hits">
+            <div class="prediction-stat-value">${stats.hits}</div>
+            <div class="prediction-stat-label">命中数</div>
           </div>
-          <div style="padding:16px;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);border-radius:12px;color:white;text-align:center;">
-            <div style="font-size:28px;font-weight:bold;">${stats.hitRate}%</div>
-            <div style="font-size:12px;opacity:0.9;">命中率</div>
+          <div class="prediction-stat-card rate">
+            <div class="prediction-stat-value">${stats.hitRate}%</div>
+            <div class="prediction-stat-label">命中率</div>
           </div>
-          <div style="padding:16px;background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);border-radius:12px;color:white;text-align:center;">
-            <div style="font-size:28px;font-weight:bold;">${stats.pending}</div>
-            <div style="font-size:12px;opacity:0.9;">待开奖</div>
+          <div class="prediction-stat-card pending">
+            <div class="prediction-stat-value">${stats.pending}</div>
+            <div class="prediction-stat-label">待开奖</div>
           </div>
         </div>
       `;
@@ -7155,76 +7155,76 @@ const Business = {
         html += `
           <div style="margin-top:16px;">
             <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:12px;">📌 分类统计（各类别独立计算）</div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div class="prediction-stats-grid">
               <!-- 生肖预测统计 -->
-              <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                  <span style="color:var(--sub-text);">🔮 生肖预测</span>
-                  <span style="font-weight:600;">${stats.byType.zodiac.total} 次</span>
+              <div class="prediction-category-card">
+                <div class="prediction-category-header">
+                  <span>🔮 生肖预测</span>
+                  <span class="prediction-category-total">${stats.byType.zodiac.total} 次</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <span style="color:var(--sub-text);">命中</span>
-                  <span style="color:#4CAF50;font-weight:600;">${stats.byType.zodiac.hits}</span>
+                <div class="prediction-category-row">
+                  <span class="prediction-category-label">命中</span>
+                  <span class="prediction-category-value hit">${stats.byType.zodiac.hits}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <span style="color:var(--sub-text);">未中</span>
-                  <span style="color:#F44336;font-weight:600;">${stats.byType.zodiac.misses}</span>
+                <div class="prediction-category-row">
+                  <span class="prediction-category-label">未中</span>
+                  <span class="prediction-category-value miss">${stats.byType.zodiac.misses}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <span style="color:var(--sub-text);">待开奖</span>
-                  <span style="color:#FF9800;font-weight:600;">${stats.byType.zodiac.pending}</span>
+                <div class="prediction-category-row">
+                  <span class="prediction-category-label">待开奖</span>
+                  <span class="prediction-category-value pending">${stats.byType.zodiac.pending}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border);">
-                  <span style="color:var(--text);font-weight:600;">命中率</span>
-                  <span style="color:var(--primary);font-weight:700;font-size:16px;">${stats.byType.zodiac.hitRate}%</span>
+                <div class="prediction-category-row prediction-category-rate">
+                  <span class="prediction-category-label">命中率</span>
+                  <span class="prediction-category-value rate">${stats.byType.zodiac.hitRate}%</span>
                 </div>
               </div>
               
               <!-- ML预测统计 -->
-              <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                  <span style="color:var(--sub-text);">🤖 ML预测</span>
-                  <span style="font-weight:600;">${stats.byType.ml.total} 次</span>
+              <div class="prediction-category-card">
+                <div class="prediction-category-header">
+                  <span>🤖 ML预测</span>
+                  <span class="prediction-category-total">${stats.byType.ml.total} 次</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <span style="color:var(--sub-text);">命中</span>
-                  <span style="color:#4CAF50;font-weight:600;">${stats.byType.ml.hits}</span>
+                <div class="prediction-category-row">
+                  <span class="prediction-category-label">命中</span>
+                  <span class="prediction-category-value hit">${stats.byType.ml.hits}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <span style="color:var(--sub-text);">未中</span>
-                  <span style="color:#F44336;font-weight:600;">${stats.byType.ml.misses}</span>
+                <div class="prediction-category-row">
+                  <span class="prediction-category-label">未中</span>
+                  <span class="prediction-category-value miss">${stats.byType.ml.misses}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <span style="color:var(--sub-text);">待开奖</span>
-                  <span style="color:#FF9800;font-weight:600;">${stats.byType.ml.pending}</span>
+                <div class="prediction-category-row">
+                  <span class="prediction-category-label">待开奖</span>
+                  <span class="prediction-category-value pending">${stats.byType.ml.pending}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border);">
-                  <span style="color:var(--text);font-weight:600;">命中率</span>
-                  <span style="color:var(--primary);font-weight:700;font-size:16px;">${stats.byType.ml.hitRate}%</span>
+                <div class="prediction-category-row prediction-category-rate">
+                  <span class="prediction-category-label">命中率</span>
+                  <span class="prediction-category-value rate">${stats.byType.ml.hitRate}%</span>
                 </div>
               </div>
               
               <!-- 精选生肖统计 -->
-              <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                  <span style="color:var(--sub-text);">✨ 精选生肖</span>
-                  <span style="font-weight:600;">${stats.byType.selected.total} 次</span>
+              <div class="prediction-category-card">
+                <div class="prediction-category-header">
+                  <span>✨ 精选生肖</span>
+                  <span class="prediction-category-total">${stats.byType.selected.total} 次</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <span style="color:var(--sub-text);">命中</span>
-                  <span style="color:#4CAF50;font-weight:600;">${stats.byType.selected.hits}</span>
+                <div class="prediction-category-row">
+                  <span class="prediction-category-label">命中</span>
+                  <span class="prediction-category-value hit">${stats.byType.selected.hits}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <span style="color:var(--sub-text);">未中</span>
-                  <span style="color:#F44336;font-weight:600;">${stats.byType.selected.misses}</span>
+                <div class="prediction-category-row">
+                  <span class="prediction-category-label">未中</span>
+                  <span class="prediction-category-value miss">${stats.byType.selected.misses}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <span style="color:var(--sub-text);">待开奖</span>
-                  <span style="color:#FF9800;font-weight:600;">${stats.byType.selected.pending}</span>
+                <div class="prediction-category-row">
+                  <span class="prediction-category-label">待开奖</span>
+                  <span class="prediction-category-value pending">${stats.byType.selected.pending}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border);">
-                  <span style="color:var(--text);font-weight:600;">命中率</span>
-                  <span style="color:var(--primary);font-weight:700;font-size:16px;">${stats.byType.selected.hitRate}%</span>
+                <div class="prediction-category-row prediction-category-rate">
+                  <span class="prediction-category-label">命中率</span>
+                  <span class="prediction-category-value rate">${stats.byType.selected.hitRate}%</span>
                 </div>
               </div>
             </div>

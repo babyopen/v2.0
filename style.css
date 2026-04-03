@@ -1702,6 +1702,161 @@ input[type="checkbox"]{
   }
 }
 
+/* 预测统计样式 */
+.prediction-stats-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.prediction-stat-card {
+  padding: 16px;
+  border-radius: 12px;
+  color: white;
+  text-align: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.prediction-stat-card.total {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.prediction-stat-card.hits {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.prediction-stat-card.rate {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.prediction-stat-card.pending {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.prediction-stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.prediction-stat-label {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.prediction-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.prediction-category-card {
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.prediction-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--sub-text);
+}
+
+.prediction-category-total {
+  font-weight: 600;
+}
+
+.prediction-category-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.prediction-category-label {
+  color: var(--sub-text);
+}
+
+.prediction-category-value {
+  font-weight: 600;
+}
+
+.prediction-category-value.hit {
+  color: #4CAF50;
+}
+
+.prediction-category-value.miss {
+  color: #F44336;
+}
+
+.prediction-category-value.pending {
+  color: #FF9800;
+}
+
+.prediction-category-value.rate {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.prediction-category-rate {
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .prediction-stats-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .prediction-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .prediction-stat-value {
+    font-size: 24px;
+  }
+  
+  .prediction-stat-card {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .prediction-stats-overview {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .prediction-stat-card {
+    padding: 10px;
+  }
+  
+  .prediction-stat-value {
+    font-size: 20px;
+  }
+  
+  .prediction-stat-label {
+    font-size: 11px;
+  }
+  
+  .prediction-category-card {
+    padding: 10px;
+  }
+  
+  .prediction-category-header {
+    font-size: 13px;
+  }
+  
+  .prediction-category-value.rate {
+    font-size: 14px;
+  }
+}
+
 /* 精选生肖模块 */
 .selected-zodiacs {
   margin-bottom: 16px;
