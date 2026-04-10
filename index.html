@@ -423,6 +423,9 @@
         <div id="specialHistoryList">
           <div class="empty-tip">暂无精选特码历史</div>
         </div>
+        <div id="specialHistoryToggle" style="display:none;margin-top:8px;">
+          <button class="toggle-btn" data-action="toggleSpecialHistory" style="width:100%;">展开更多</button>
+        </div>
         <div id="specialHistoryPagination" class="pagination"></div>
       </div>
     </div>
@@ -436,6 +439,9 @@
       <div class="card-body" id="hotNumbersHistoryBody">
         <div id="hotNumbersHistoryList">
           <div class="empty-tip">暂无特码热门TOP5历史</div>
+        </div>
+        <div id="hotNumbersHistoryToggle" style="display:none;margin-top:8px;">
+          <button class="toggle-btn" data-action="toggleHotNumbersHistory" style="width:100%;">展开更多</button>
         </div>
         <div id="hotNumbersHistoryPagination" class="pagination"></div>
       </div>
@@ -6666,20 +6672,18 @@ const Business = {
     try {
       const historyListEl = document.getElementById('zodiacPredictionHistoryList');
       const toggleEl = document.getElementById('zodiacPredictionHistoryToggle');
-      const toggleIconEl = document.getElementById('zodiacPredictionHistoryToggleIcon');
       if(!historyListEl) return;
       
       const history = Storage.get(Storage.KEYS.ZODIAC_PREDICTION_HISTORY, []);
       const state = StateManager._state;
       const historyData = state.analysis.historyData || [];
+      const isExpanded = state.zodiacPredictionHistoryExpanded || false;
       
       // 获取按钮选中状态（通过active类）
       const show10Period = document.querySelector('.prediction-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
       const show20Period = document.querySelector('.prediction-period-btn[data-period="20"]')?.classList.contains('active') ?? false;
       const show30Period = document.querySelector('.prediction-period-btn[data-period="30"]')?.classList.contains('active') ?? false;
       const showAllPeriod = document.querySelector('.prediction-period-btn[data-period="all"]')?.classList.contains('active') ?? false;
-      
-
       
       // 创建期数到生肖的映射
       const expectToZodiac = {};
@@ -6704,10 +6708,19 @@ const Business = {
         return false;
       });
       
-      // 显示所有历史记录
-      const displayHistory = filteredHistory;
+      // 按时间戳降序排序，确保最新的记录在前面
+      const sortedHistory = filteredHistory.sort((a, b) => {
+        const timestampA = a.timestamp || 0;
+        const timestampB = b.timestamp || 0;
+        return timestampB - timestampA;
+      });
       
-      if(filteredHistory.length === 0) {
+      // 根据展开状态决定显示的记录数量
+      const MAX_VISIBLE_ITEMS = 2;
+      const displayHistory = isExpanded ? sortedHistory : sortedHistory.slice(0, MAX_VISIBLE_ITEMS);
+      const hasMoreItems = sortedHistory.length > MAX_VISIBLE_ITEMS;
+      
+      if(sortedHistory.length === 0) {
         historyListEl.innerHTML = '<div style="text-align:center;color:var(--sub-text);padding:20px;font-size:13px;">暂无预测历史</div>';
         if(toggleEl) toggleEl.style.display = 'none';
         return;
@@ -6730,7 +6743,7 @@ const Business = {
           // 比对成功的生肖标签底色变蓝色
           const isMatchZodiac = actualZodiac && p.zodiac === actualZodiac;
           const tagClass = isMatchZodiac ? 'history-tag hit' : 'history-tag';
-          return `<span class="${tagClass}" onclick="Business.showPredictionHistoryDetail(${idx}, event)" style="cursor:pointer;">${p.zodiac}</span>`;
+          return `<span class="${tagClass}" onclick="Business.showPredictionHistoryDetail(${sortedHistory.indexOf(item)}, event)" style="cursor:pointer;">${p.zodiac}</span>`;
         }).join('');
         
         let titleText = '';
@@ -6748,8 +6761,8 @@ const Business = {
         const predictionText = item.predictions.map(p => p.zodiac).join(' ');
         
         html += `
-          <div class="special-history-item" data-index="${idx}" style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;position:relative;overflow:hidden;">
-            <div class="special-history-delete" onclick="Business.deleteZodiacPredictionHistoryItem(${idx}, event)" style="position:absolute;right:0;top:0;bottom:0;width:80px;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:translateX(100%);transition:transform 0.3s ease;z-index:10;">
+          <div class="special-history-item" data-index="${sortedHistory.indexOf(item)}" style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;position:relative;overflow:hidden;transition:all 0.3s ease;">
+            <div class="special-history-delete" onclick="Business.deleteZodiacPredictionHistoryItem(${sortedHistory.indexOf(item)}, event)" style="position:absolute;right:0;top:0;bottom:0;width:80px;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:translateX(100%);transition:transform 0.3s ease;z-index:10;">
               <span style="font-size:14px;">删除</span>
             </div>
             <div class="special-history-content" style="transition:transform 0.3s ease;position:relative;z-index:5;background:var(--card);">
@@ -6760,20 +6773,26 @@ const Business = {
               </div>
               <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;">
                 <div style="flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;">${predictions}</div>
-                ${actualZodiac ? `<span class="${actualZodiacClass}" onclick="Business.showPredictionHistoryDetail(${idx}, event)" style="flex-shrink:0;cursor:pointer;">${actualZodiac}</span>` : ''}
+                ${actualZodiac ? `<span class="${actualZodiacClass}" onclick="Business.showPredictionHistoryDetail(${sortedHistory.indexOf(item)}, event)" style="flex-shrink:0;cursor:pointer;">${actualZodiac}</span>` : ''}
               </div>
             </div>
           </div>
         `;
       });
       
-
-      
       historyListEl.innerHTML = html;
       
-      // 隐藏原来的展开更多按钮
+      // 显示/隐藏展开更多按钮
       if(toggleEl) {
-        toggleEl.style.display = 'none';
+        if(hasMoreItems) {
+          toggleEl.style.display = 'block';
+          const toggleBtn = toggleEl.querySelector('.toggle-btn');
+          if(toggleBtn) {
+            toggleBtn.textContent = isExpanded ? '收起' : '显示更多';
+          }
+        } else {
+          toggleEl.style.display = 'none';
+        }
       }
     } catch(e) {
       console.error('渲染预测历史失败', e);
@@ -8631,7 +8650,7 @@ const Business = {
       const state = StateManager._state;
       const historyListEl = document.getElementById('specialHistoryList');
       const toggleEl = document.getElementById('specialHistoryToggle');
-      const toggleIconEl = document.getElementById('specialHistoryToggleIcon');
+      const isExpanded = state.specialHistoryExpanded || false;
       
       if(!historyListEl) return;
       
@@ -8664,11 +8683,21 @@ const Business = {
       // 使用辅助函数获取筛选后的历史记录
       const filteredHistory = Business.getFilteredSpecialHistory();
       
-      // 显示所有历史记录
-      const displayHistory = filteredHistory;
+      // 按时间戳降序排序，确保最新的记录在前面
+      const sortedHistory = filteredHistory.sort((a, b) => {
+        const timestampA = a.timestamp || 0;
+        const timestampB = b.timestamp || 0;
+        return timestampB - timestampA;
+      });
+      
+      // 根据展开状态决定显示的记录数量
+      const MAX_VISIBLE_ITEMS = 1;
+      const displayHistory = isExpanded ? sortedHistory : sortedHistory.slice(0, MAX_VISIBLE_ITEMS);
+      const hasMoreItems = sortedHistory.length > MAX_VISIBLE_ITEMS;
       
       let html = '';
       displayHistory.forEach((item, globalIdx) => {
+        const originalIdx = sortedHistory.indexOf(item);
         const period = item.analyzeLimit;
         const periodText = item.selectedPeriodText || (period === 'all' || period >= 365 ? '全年数据' : `${period}期数据`);
         const numCount = item.numCount || item.numbers.length;
@@ -8704,7 +8733,7 @@ const Business = {
           const isHit = item.hitNumbers && item.hitNumbers.includes(num);
           const tagClass = isHit ? 'history-tag hit' : 'history-tag';
           
-          numbersHtml += `<span class="${tagClass}" onclick="Business.showSpecialHistoryDetail(${globalIdx}, event)" style="cursor:pointer;">${String(num).padStart(2, '0')}</span>`;
+          numbersHtml += `<span class="${tagClass}" onclick="Business.showSpecialHistoryDetail(${originalIdx}, event)" style="cursor:pointer;">${String(num).padStart(2, '0')}</span>`;
         });
         
         // 生成开奖号码显示 - 仅在开奖后显示
@@ -8713,15 +8742,15 @@ const Business = {
           const isHit = item.hitCount > 0;
           const drawClass = isHit ? 'history-tag hit' : 'history-tag miss';
           
-          drawNumberHtml = `<span class="${drawClass}" onclick="Business.showSpecialHistoryDetail(${globalIdx}, event)" style="margin-left:auto;cursor:pointer;">${String(item.drawResult).padStart(2, '0')}</span>`;
+          drawNumberHtml = `<span class="${drawClass}" onclick="Business.showSpecialHistoryDetail(${originalIdx}, event)" style="margin-left:auto;cursor:pointer;">${String(item.drawResult).padStart(2, '0')}</span>`;
         }
         
         // 准备复制文本（号码列表）
         const numbersText = item.numbers.map(n => String(n).padStart(2, '0')).join(' ');
         
         html += `
-          <div class="special-history-item" data-index="${globalIdx}" style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;position:relative;overflow:hidden;">
-            <div class="special-history-delete" onclick="Business.deleteSpecialHistoryItem(${globalIdx}, event)" style="position:absolute;right:0;top:0;bottom:0;width:80px;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:translateX(100%);transition:transform 0.3s ease;z-index:10;">
+          <div class="special-history-item" data-index="${originalIdx}" style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;position:relative;overflow:hidden;transition:all 0.3s ease;">
+            <div class="special-history-delete" onclick="Business.deleteSpecialHistoryItem(${originalIdx}, event)" style="position:absolute;right:0;top:0;bottom:0;width:80px;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:translateX(100%);transition:transform 0.3s ease;z-index:10;">
               <span style="font-size:14px;">删除</span>
             </div>
             <div class="special-history-content" style="transition:transform 0.3s ease;position:relative;z-index:5;background:var(--card);">
@@ -8740,9 +8769,20 @@ const Business = {
         `;
       });
       
-
-      
       historyListEl.innerHTML = html;
+      
+      // 显示/隐藏展开更多按钮
+      if(toggleEl) {
+        if(hasMoreItems) {
+          toggleEl.style.display = 'block';
+          const toggleBtn = toggleEl.querySelector('.toggle-btn');
+          if(toggleBtn) {
+            toggleBtn.textContent = isExpanded ? '收起' : '显示更多';
+          }
+        } else {
+          toggleEl.style.display = 'none';
+        }
+      }
     } catch(e) {
       console.error('渲染精选特码历史失败', e);
     }
@@ -8770,12 +8810,14 @@ const Business = {
   },
   
   /**
-   * 切换精选特码历史的展开/折叠状态（保留用于兼容，但分页已废弃）
-   * @deprecated 使用分页代替
+   * 切换精选特码历史的展开/折叠状态
    */
   toggleSpecialHistory: () => {
     try {
-      // 现在使用分页，这个函数保留但不再使用
+      const state = StateManager._state;
+      const newExpanded = !state.specialHistoryExpanded;
+      StateManager.setState({ specialHistoryExpanded: newExpanded }, false);
+      Business.renderSpecialHistory();
     } catch(e) {
       console.error('切换精选特码历史展开状态失败', e);
     }
@@ -10377,7 +10419,8 @@ const Business = {
     try {
       const state = StateManager._state;
       const historyListEl = document.getElementById('hotNumbersHistoryList');
-      const toggleIconEl = document.getElementById('hotNumbersHistoryToggleIcon');
+      const toggleEl = document.getElementById('hotNumbersHistoryToggle');
+      const isExpanded = state.hotNumbersHistoryExpanded || false;
       
       if(!historyListEl) return;
       
@@ -10385,14 +10428,25 @@ const Business = {
       
       if(history.length === 0) {
         historyListEl.innerHTML = '<div style="text-align:center;color:var(--sub-text);padding:20px;font-size:13px;">暂无特码热门top5历史</div>';
+        if(toggleEl) toggleEl.style.display = 'none';
         return;
       }
       
-      // 显示所有历史记录
-      const displayData = history;
+      // 按时间戳降序排序，确保最新的记录在前面
+      const sortedHistory = history.sort((a, b) => {
+        const timestampA = a.timestamp || 0;
+        const timestampB = b.timestamp || 0;
+        return timestampB - timestampA;
+      });
+      
+      // 根据展开状态决定显示的记录数量
+      const MAX_VISIBLE_ITEMS = 1;
+      const displayData = isExpanded ? sortedHistory : sortedHistory.slice(0, MAX_VISIBLE_ITEMS);
+      const hasMoreItems = sortedHistory.length > MAX_VISIBLE_ITEMS;
       
       let historyHtml = '';
       displayData.forEach((item, globalIdx) => {
+        const originalIdx = sortedHistory.indexOf(item);
         
         // 生成标题信息
         const titleText = `第${item.expect}期 · 5个号 · 🔥`;
@@ -10403,14 +10457,14 @@ const Business = {
         sortedHotNumbers.forEach(hn => {
           const isHit = item.actualSpecial !== null && hn.num === item.actualSpecial;
           const tagClass = isHit ? 'history-tag hit' : 'history-tag';
-          numbersHtml += `<span class="${tagClass}" onclick="Business.showHotNumbersHistoryDetail(${globalIdx}, event)" style="cursor:pointer;">${hn.numStr}</span>`;
+          numbersHtml += `<span class="${tagClass}" onclick="Business.showHotNumbersHistoryDetail(${originalIdx}, event)" style="cursor:pointer;">${hn.numStr}</span>`;
         });
         
         // 生成开奖号码显示 - 仅在开奖后显示
         let drawNumberHtml = '';
         if(item.actualSpecial !== null) {
           const drawClass = item.isHit ? 'history-tag hit' : 'history-tag miss';
-          drawNumberHtml = `<span class="${drawClass}" onclick="Business.showHotNumbersHistoryDetail(${globalIdx}, event)" style="margin-left:auto;cursor:pointer;">${String(item.actualSpecial).padStart(2, '0')}</span>`;
+          drawNumberHtml = `<span class="${drawClass}" onclick="Business.showHotNumbersHistoryDetail(${originalIdx}, event)" style="margin-left:auto;cursor:pointer;">${String(item.actualSpecial).padStart(2, '0')}</span>`;
         }
         
         // 准备复制文本（号码列表）
@@ -10420,8 +10474,8 @@ const Business = {
         }).join(' ');
         
         historyHtml += `
-          <div class="special-history-item" data-index="${globalIdx}" style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;position:relative;overflow:hidden;">
-            <div class="special-history-delete" onclick="Business.deleteHotNumbersHistoryItem(${globalIdx}, event)" style="position:absolute;right:0;top:0;bottom:0;width:80px;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:translateX(100%);transition:transform 0.3s ease;z-index:10;">
+          <div class="special-history-item" data-index="${originalIdx}" style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;position:relative;overflow:hidden;transition:all 0.3s ease;">
+            <div class="special-history-delete" onclick="Business.deleteHotNumbersHistoryItem(${originalIdx}, event)" style="position:absolute;right:0;top:0;bottom:0;width:80px;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:translateX(100%);transition:transform 0.3s ease;z-index:10;">
               <span style="font-size:14px;">删除</span>
             </div>
             <div class="special-history-content" style="transition:transform 0.3s ease;position:relative;z-index:5;background:var(--card);">
@@ -10440,9 +10494,20 @@ const Business = {
         `;
       });
       
-
-      
       historyListEl.innerHTML = historyHtml;
+      
+      // 显示/隐藏展开更多按钮
+      if(toggleEl) {
+        if(hasMoreItems) {
+          toggleEl.style.display = 'block';
+          const toggleBtn = toggleEl.querySelector('.toggle-btn');
+          if(toggleBtn) {
+            toggleBtn.textContent = isExpanded ? '收起' : '显示更多';
+          }
+        } else {
+          toggleEl.style.display = 'none';
+        }
+      }
       
       // 隐藏分页
       const paginationEl = document.getElementById('hotNumbersHistoryPagination');
