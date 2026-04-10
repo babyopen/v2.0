@@ -7382,10 +7382,33 @@ const Business = {
         };
       };
       
+      /**
+       * 按期数筛选生肖预测历史
+       * @param {Array} history - 生肖预测历史数组
+       * @param {number} period - 期数（10, 20, 30, 0表示全年）
+       * @returns {Array} 筛选后的历史记录
+       */
+      const filterZodiacHistoryByPeriod = (history, period) => {
+        if (period === 0) return history; // 全年
+        return history.filter(item => {
+          const itemPeriod = item.selectedPeriod;
+          const periodText = item.selectedPeriodText || '';
+          return itemPeriod === period || periodText.includes(`${period}期`);
+        });
+      };
+      
       // 分别计算三个类别的统计数据
       const zodiacStats = calculateCategoryStats(zodiacHistory);
       const mlStats = calculateCategoryStats(mlHistory);
       const selectedStats = calculateCategoryStats(selectedZodiacHistory);
+      
+      // 计算按期数拆分的生肖预测统计
+      const zodiacStatsByPeriod = {
+        10: calculateCategoryStats(filterZodiacHistoryByPeriod(zodiacHistory, 10)),
+        20: calculateCategoryStats(filterZodiacHistoryByPeriod(zodiacHistory, 20)),
+        30: calculateCategoryStats(filterZodiacHistoryByPeriod(zodiacHistory, 30)),
+        all: calculateCategoryStats(filterZodiacHistoryByPeriod(zodiacHistory, 0))
+      };
       
       // 计算总体统计数据
       const totalPredictions = zodiacStats.total + mlStats.total + selectedStats.total;
@@ -7408,7 +7431,9 @@ const Business = {
           zodiac: zodiacStats,
           ml: mlStats,
           selected: selectedStats
-        }
+        },
+        // 按期数拆分的生肖预测统计
+        zodiacByPeriod: zodiacStatsByPeriod
       };
     } catch (e) {
       console.error('获取预测统计失败', e);
@@ -7425,6 +7450,12 @@ const Business = {
           zodiac: { ...emptyStats }, 
           ml: { ...emptyStats },
           selected: { ...emptyStats }
+        },
+        zodiacByPeriod: {
+          10: { ...emptyStats },
+          20: { ...emptyStats },
+          30: { ...emptyStats },
+          all: { ...emptyStats }
         }
       };
     }
@@ -7661,6 +7692,100 @@ const Business = {
                 <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border);">
                   <span style="color:var(--text);font-weight:600;">命中率</span>
                   <span style="color:var(--primary);font-weight:700;font-size:16px;">${stats.byType.selected.hitRate}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // 显示按期数拆分的生肖预测统计
+      if (stats.byType.zodiac.total > 0) {
+        html += `
+          <div style="margin-top:16px;">
+            <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:12px;">📊 生肖预测期数统计</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+              <!-- 10期统计 -->
+              <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
+                <div style="font-size:14px;font-weight:600;margin-bottom:8px;color:var(--text);">10期</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">命中</span>
+                  <span style="color:#4CAF50;font-weight:600;">${stats.zodiacByPeriod[10].hits}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">未中</span>
+                  <span style="color:#F44336;font-weight:600;">${stats.zodiacByPeriod[10].misses}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">待开奖</span>
+                  <span style="color:#FF9800;font-weight:600;">${stats.zodiacByPeriod[10].pending}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border);">
+                  <span style="color:var(--text);font-weight:600;">命中率</span>
+                  <span style="color:var(--primary);font-weight:700;font-size:16px;">${stats.zodiacByPeriod[10].hitRate}%</span>
+                </div>
+              </div>
+              
+              <!-- 20期统计 -->
+              <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
+                <div style="font-size:14px;font-weight:600;margin-bottom:8px;color:var(--text);">20期</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">命中</span>
+                  <span style="color:#4CAF50;font-weight:600;">${stats.zodiacByPeriod[20].hits}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">未中</span>
+                  <span style="color:#F44336;font-weight:600;">${stats.zodiacByPeriod[20].misses}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">待开奖</span>
+                  <span style="color:#FF9800;font-weight:600;">${stats.zodiacByPeriod[20].pending}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border);">
+                  <span style="color:var(--text);font-weight:600;">命中率</span>
+                  <span style="color:var(--primary);font-weight:700;font-size:16px;">${stats.zodiacByPeriod[20].hitRate}%</span>
+                </div>
+              </div>
+              
+              <!-- 30期统计 -->
+              <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
+                <div style="font-size:14px;font-weight:600;margin-bottom:8px;color:var(--text);">30期</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">命中</span>
+                  <span style="color:#4CAF50;font-weight:600;">${stats.zodiacByPeriod[30].hits}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">未中</span>
+                  <span style="color:#F44336;font-weight:600;">${stats.zodiacByPeriod[30].misses}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">待开奖</span>
+                  <span style="color:#FF9800;font-weight:600;">${stats.zodiacByPeriod[30].pending}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border);">
+                  <span style="color:var(--text);font-weight:600;">命中率</span>
+                  <span style="color:var(--primary);font-weight:700;font-size:16px;">${stats.zodiacByPeriod[30].hitRate}%</span>
+                </div>
+              </div>
+              
+              <!-- 全年统计 -->
+              <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
+                <div style="font-size:14px;font-weight:600;margin-bottom:8px;color:var(--text);">全年</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">命中</span>
+                  <span style="color:#4CAF50;font-weight:600;">${stats.zodiacByPeriod.all.hits}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">未中</span>
+                  <span style="color:#F44336;font-weight:600;">${stats.zodiacByPeriod.all.misses}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <span style="color:var(--sub-text);">待开奖</span>
+                  <span style="color:#FF9800;font-weight:600;">${stats.zodiacByPeriod.all.pending}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border);">
+                  <span style="color:var(--text);font-weight:600;">命中率</span>
+                  <span style="color:var(--primary);font-weight:700;font-size:16px;">${stats.zodiacByPeriod.all.hitRate}%</span>
                 </div>
               </div>
             </div>
