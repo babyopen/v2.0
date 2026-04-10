@@ -330,6 +330,12 @@
         </div>
       </div>
       <div class="card-body" id="selectedZodiacHistoryBody">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 class="card-title">精选生肖历史</h3>
+          <button class="btn btn-sm" onclick="Business.refreshHistory()" style="padding: 4px 12px; font-size: 12px;">
+            <span class="icon">🔄</span> 刷新
+          </button>
+        </div>
         <div id="selectedZodiacHistoryList">
           <div class="empty-tip">暂无精选生肖历史</div>
         </div>
@@ -420,6 +426,11 @@
             </div>
           </div>
         </div>
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+          <button class="btn btn-sm" onclick="Business.refreshHistory()" style="padding: 4px 12px; font-size: 12px;">
+            <span class="icon">🔄</span> 刷新
+          </button>
+        </div>
         <div id="specialHistoryList">
           <div class="empty-tip">暂无精选特码历史</div>
         </div>
@@ -437,6 +448,12 @@
         </div>
       </div>
       <div class="card-body" id="hotNumbersHistoryBody">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 class="card-title">特码热门TOP5历史</h3>
+          <button class="btn btn-sm" onclick="Business.refreshHistory()" style="padding: 4px 12px; font-size: 12px;">
+            <span class="icon">🔄</span> 刷新
+          </button>
+        </div>
         <div id="hotNumbersHistoryList">
           <div class="empty-tip">暂无特码热门TOP5历史</div>
         </div>
@@ -10840,6 +10857,153 @@ const Business = {
     const expanded = !state.hotNumbersHistoryExpanded;
     StateManager.setState({ hotNumbersHistoryExpanded: expanded }, false);
     Business.renderHotNumbersHistory();
+  },
+  
+  /**
+   * 刷新所有历史记录
+   */
+  refreshHistory: () => {
+    try {
+      // 显示加载状态
+      const historyContainer = document.getElementById('historyContainer');
+      if(historyContainer) {
+        const loadingEl = document.createElement('div');
+        loadingEl.id = 'historyLoading';
+        loadingEl.style.cssText = `
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(255, 255, 255, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          border-radius: 8px;
+        `;
+        loadingEl.innerHTML = `
+          <div style="text-align: center;">
+            <div class="loading-spinner"></div>
+            <div style="margin-top: 10px; font-size: 14px; color: var(--text);">加载中...</div>
+          </div>
+        `;
+        historyContainer.style.position = 'relative';
+        historyContainer.appendChild(loadingEl);
+      }
+      
+      // 重新加载所有历史记录
+      Promise.all([
+        // 加载预测历史
+        new Promise((resolve) => {
+          try {
+            Business.loadPredictionHistoryFilter();
+            Business.renderZodiacPredictionHistory();
+          } catch(e) {
+            console.error('加载预测历史失败', e);
+          } finally {
+            resolve();
+          }
+        }),
+        
+        // 加载精选特码历史
+        new Promise((resolve) => {
+          try {
+            const specialHistory = Storage.loadSpecialHistory();
+            StateManager.setState({ specialHistory: specialHistory }, false);
+            Business.loadSpecialHistoryFilter();
+            
+            const state = StateManager._state;
+            const currentSystemMode = state.analysis.specialMode || 'auto';
+            let defaultHistoryMode = state.specialHistoryModeFilter || 'all';
+            
+            if(defaultHistoryMode === 'all') {
+              if(currentSystemMode === 'hot') {
+                defaultHistoryMode = 'hot';
+              } else if(currentSystemMode === 'cold') {
+                defaultHistoryMode = 'cold';
+              } else if(currentSystemMode === 'auto') {
+                try {
+                  const data = Business.calcZodiacAnalysis(10);
+                  if(data) {
+                    defaultHistoryMode = Business.decideAutoMode(data);
+                  } else {
+                    defaultHistoryMode = 'hot';
+                  }
+                } catch(e) {
+                  console.error('计算自动模式失败', e);
+                  defaultHistoryMode = 'hot';
+                }
+              }
+            }
+            
+            StateManager.setState({ specialHistoryModeFilter: defaultHistoryMode }, false);
+            
+            document.querySelectorAll('.special-history-mode-btn').forEach(btn => {
+              btn.classList.toggle('active', btn.dataset.mode === defaultHistoryMode);
+            });
+          } catch(e) {
+            console.error('加载精选特码历史失败', e);
+            StateManager.setState({ specialHistory: [] }, false);
+          } finally {
+            resolve();
+          }
+        }),
+        
+        // 加载精选生肖历史
+        new Promise((resolve) => {
+          try {
+            const selectedZodiacHistory = Storage.loadSelectedZodiacHistory();
+            StateManager.setState({ selectedZodiacHistory: selectedZodiacHistory }, false);
+          } catch(e) {
+            console.error('加载精选生肖历史失败', e);
+            StateManager.setState({ selectedZodiacHistory: [] }, false);
+          } finally {
+            resolve();
+          }
+        }),
+        
+        // 加载特码热门top5历史
+        new Promise((resolve) => {
+          try {
+            const hotNumbersHistory = Storage.loadHotNumbersHistory();
+            StateManager.setState({ hotNumbersHistory: hotNumbersHistory }, false);
+          } catch(e) {
+            console.error('加载特码热门top5历史失败', e);
+            StateManager.setState({ hotNumbersHistory: [] }, false);
+          } finally {
+            resolve();
+          }
+        })
+      ]).then(() => {
+        // 渲染所有历史记录
+        try {
+          Business.renderZodiacPredictionHistory();
+          Business.renderSpecialHistory();
+          Business.renderSelectedZodiacHistory();
+          Business.renderHotNumbersHistory();
+          Toast.show('历史记录已刷新');
+        } catch(e) {
+          console.error('渲染历史记录失败', e);
+          Toast.show('刷新失败，请重试', 'error');
+        }
+      }).finally(() => {
+        // 隐藏加载状态
+        const loadingEl = document.getElementById('historyLoading');
+        if(loadingEl) {
+          loadingEl.remove();
+        }
+      });
+    } catch(e) {
+      console.error('刷新历史记录失败', e);
+      Toast.show('刷新失败，请重试', 'error');
+      
+      // 隐藏加载状态
+      const loadingEl = document.getElementById('historyLoading');
+      if(loadingEl) {
+        loadingEl.remove();
+      }
+    }
   }
 };
 
@@ -11374,52 +11538,88 @@ async function initApp() {
     }
     
     // 10. 加载预测历史勾选状态并渲染
-    Business.loadPredictionHistoryFilter();
-    Business.renderZodiacPredictionHistory();
-    
-    // 11. 加载精选特码历史并渲染
-    const specialHistory = Storage.loadSpecialHistory();
-    StateManager.setState({ specialHistory: specialHistory }, false);
-    // 先加载用户之前保存的筛选状态
-    Business.loadSpecialHistoryFilter();
-    
-    // 根据自动模式的初始状态，设置精选特码历史的默认显示模式
-    const state = StateManager._state;
-    const currentSystemMode = state.analysis.specialMode || 'auto';
-    let defaultHistoryMode = state.specialHistoryModeFilter || 'all';
-    
-    // 如果当前是"全部"模式，根据系统模式自动调整
-    if(defaultHistoryMode === 'all') {
-      if(currentSystemMode === 'hot') {
-        defaultHistoryMode = 'hot';
-      } else if(currentSystemMode === 'cold') {
-        defaultHistoryMode = 'cold';
-      } else if(currentSystemMode === 'auto') {
-        // 自动模式：根据当前分析结果决定显示什么模式
-        const data = Business.calcZodiacAnalysis(10);
-        if(data) {
-          defaultHistoryMode = Business.decideAutoMode(data);
-        } else {
-          defaultHistoryMode = 'hot';
-        }
-      }
+    try {
+      Business.loadPredictionHistoryFilter();
+      Business.renderZodiacPredictionHistory();
+    } catch(e) {
+      console.error('加载预测历史失败', e);
     }
     
-    // 更新精选特码历史的显示模式
-    StateManager.setState({ specialHistoryModeFilter: defaultHistoryMode }, false);
-    
-    // 更新精选特码历史按钮样式
-    document.querySelectorAll('.special-history-mode-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === defaultHistoryMode);
-    });
+    // 11. 加载精选特码历史并渲染
+    try {
+      const specialHistory = Storage.loadSpecialHistory();
+      StateManager.setState({ specialHistory: specialHistory }, false);
+      // 先加载用户之前保存的筛选状态
+      Business.loadSpecialHistoryFilter();
+      
+      // 根据自动模式的初始状态，设置精选特码历史的默认显示模式
+      const state = StateManager._state;
+      const currentSystemMode = state.analysis.specialMode || 'auto';
+      let defaultHistoryMode = state.specialHistoryModeFilter || 'all';
+      
+      // 如果当前是"全部"模式，根据系统模式自动调整
+      if(defaultHistoryMode === 'all') {
+        if(currentSystemMode === 'hot') {
+          defaultHistoryMode = 'hot';
+        } else if(currentSystemMode === 'cold') {
+          defaultHistoryMode = 'cold';
+        } else if(currentSystemMode === 'auto') {
+          // 自动模式：根据当前分析结果决定显示什么模式
+          try {
+            const data = Business.calcZodiacAnalysis(10);
+            if(data) {
+              defaultHistoryMode = Business.decideAutoMode(data);
+            } else {
+              defaultHistoryMode = 'hot';
+            }
+          } catch(e) {
+            console.error('计算自动模式失败', e);
+            defaultHistoryMode = 'hot';
+          }
+        }
+      }
+      
+      // 更新精选特码历史的显示模式
+      StateManager.setState({ specialHistoryModeFilter: defaultHistoryMode }, false);
+      
+      // 更新精选特码历史按钮样式
+      document.querySelectorAll('.special-history-mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === defaultHistoryMode);
+      });
+    } catch(e) {
+      console.error('加载精选特码历史失败', e);
+      // 确保状态有默认值
+      StateManager.setState({ specialHistory: [] }, false);
+    }
     
     // 11.5. 加载精选生肖历史
-    const selectedZodiacHistory = Storage.loadSelectedZodiacHistory();
-    StateManager.setState({ selectedZodiacHistory: selectedZodiacHistory }, false);
+    try {
+      const selectedZodiacHistory = Storage.loadSelectedZodiacHistory();
+      StateManager.setState({ selectedZodiacHistory: selectedZodiacHistory }, false);
+    } catch(e) {
+      console.error('加载精选生肖历史失败', e);
+      // 确保状态有默认值
+      StateManager.setState({ selectedZodiacHistory: [] }, false);
+    }
     
     // 11.6. 加载特码热门top5历史
-    const hotNumbersHistory = Storage.loadHotNumbersHistory();
-    StateManager.setState({ hotNumbersHistory: hotNumbersHistory }, false);
+    try {
+      const hotNumbersHistory = Storage.loadHotNumbersHistory();
+      StateManager.setState({ hotNumbersHistory: hotNumbersHistory }, false);
+    } catch(e) {
+      console.error('加载特码热门top5历史失败', e);
+      // 确保状态有默认值
+      StateManager.setState({ hotNumbersHistory: [] }, false);
+    }
+    
+    // 11.7. 渲染所有历史记录
+    try {
+      Business.renderSpecialHistory();
+      Business.renderSelectedZodiacHistory();
+      Business.renderHotNumbersHistory();
+    } catch(e) {
+      console.error('渲染历史记录失败', e);
+    }
 
     // 12. 初始化滑动处理器
     Utils.initSwipeHandlers();
