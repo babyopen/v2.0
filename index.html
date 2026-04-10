@@ -339,6 +339,9 @@
         <div id="selectedZodiacHistoryList">
           <div class="empty-tip">暂无精选生肖历史</div>
         </div>
+        <div id="selectedZodiacHistoryToggle" style="display:none;margin-top:8px;">
+          <button class="toggle-btn" data-action="toggleSelectedZodiacHistory" style="width:100%;">展开更多</button>
+        </div>
       </div>
     </div>
     <div class="card">
@@ -6694,7 +6697,7 @@ const Business = {
       const history = Storage.get(Storage.KEYS.ZODIAC_PREDICTION_HISTORY, []);
       const state = StateManager._state;
       const historyData = state.analysis.historyData || [];
-      const isExpanded = state.zodiacPredictionHistoryExpanded || false;
+      const visibleCount = state.zodiacPredictionHistoryVisibleCount || 2;
       
       // 获取按钮选中状态（通过active类）
       const show10Period = document.querySelector('.prediction-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
@@ -6732,10 +6735,9 @@ const Business = {
         return timestampB - timestampA;
       });
       
-      // 根据展开状态决定显示的记录数量
-      const MAX_VISIBLE_ITEMS = 2;
-      const displayHistory = isExpanded ? sortedHistory : sortedHistory.slice(0, MAX_VISIBLE_ITEMS);
-      const hasMoreItems = sortedHistory.length > MAX_VISIBLE_ITEMS;
+      // 决定显示的记录数量
+      const displayHistory = sortedHistory.slice(0, visibleCount);
+      const hasMoreItems = sortedHistory.length > visibleCount;
       
       if(sortedHistory.length === 0) {
         historyListEl.innerHTML = '<div style="text-align:center;color:var(--sub-text);padding:20px;font-size:13px;">暂无预测历史</div>';
@@ -6805,7 +6807,13 @@ const Business = {
           toggleEl.style.display = 'block';
           const toggleBtn = toggleEl.querySelector('.toggle-btn');
           if(toggleBtn) {
-            toggleBtn.textContent = isExpanded ? '收起' : '显示更多';
+            if (visibleCount === 2) {
+              toggleBtn.textContent = '显示更多';
+            } else if (visibleCount < sortedHistory.length) {
+              toggleBtn.textContent = '加载更多';
+            } else {
+              toggleBtn.textContent = '收起';
+            }
           }
         } else {
           toggleEl.style.display = 'none';
@@ -6824,8 +6832,43 @@ const Business = {
   toggleZodiacPredictionHistory: () => {
     try {
       const state = StateManager._state;
-      const newExpanded = !state.zodiacPredictionHistoryExpanded;
-      StateManager.setState({ zodiacPredictionHistoryExpanded: newExpanded }, false);
+      const history = Storage.get(Storage.KEYS.ZODIAC_PREDICTION_HISTORY, []);
+      
+      // 获取按钮选中状态（通过active类）
+      const show10Period = document.querySelector('.prediction-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
+      const show20Period = document.querySelector('.prediction-period-btn[data-period="20"]')?.classList.contains('active') ?? false;
+      const show30Period = document.querySelector('.prediction-period-btn[data-period="30"]')?.classList.contains('active') ?? false;
+      const showAllPeriod = document.querySelector('.prediction-period-btn[data-period="all"]')?.classList.contains('active') ?? false;
+      
+      // 根据勾选状态筛选历史记录
+      const filteredHistory = history.filter(item => {
+        const period = item.selectedPeriod;
+        const periodText = item.selectedPeriodText || '';
+        
+        if(show10Period && (period === 10 || periodText.includes('10期'))) return true;
+        if(show20Period && (period === 20 || periodText.includes('20期'))) return true;
+        if(show30Period && (period === 30 || periodText.includes('30期'))) return true;
+        if(showAllPeriod && periodText.includes('全年')) return true;
+        
+        return false;
+      });
+      
+      const totalCount = filteredHistory.length;
+      const currentVisibleCount = state.zodiacPredictionHistoryVisibleCount || 2;
+      let newVisibleCount;
+      
+      if (currentVisibleCount === 2) {
+        // 从默认状态展开，显示10条
+        newVisibleCount = Math.min(10, totalCount);
+      } else if (currentVisibleCount < totalCount) {
+        // 继续加载更多，每次加载10条
+        newVisibleCount = Math.min(currentVisibleCount + 10, totalCount);
+      } else {
+        // 已经显示全部，收起回到2条
+        newVisibleCount = 2;
+      }
+      
+      StateManager.setState({ zodiacPredictionHistoryVisibleCount: newVisibleCount }, false);
       Business.renderZodiacPredictionHistory();
     } catch(e) {
       console.error('切换预测历史展开状态失败', e);
@@ -8792,7 +8835,7 @@ const Business = {
       const state = StateManager._state;
       const historyListEl = document.getElementById('specialHistoryList');
       const toggleEl = document.getElementById('specialHistoryToggle');
-      const isExpanded = state.specialHistoryExpanded || false;
+      const visibleCount = state.specialHistoryVisibleCount || 2;
       
       if(!historyListEl) return;
       
@@ -8832,10 +8875,9 @@ const Business = {
         return timestampB - timestampA;
       });
       
-      // 根据展开状态决定显示的记录数量
-      const MAX_VISIBLE_ITEMS = 1;
-      const displayHistory = isExpanded ? sortedHistory : sortedHistory.slice(0, MAX_VISIBLE_ITEMS);
-      const hasMoreItems = sortedHistory.length > MAX_VISIBLE_ITEMS;
+      // 决定显示的记录数量
+      const displayHistory = sortedHistory.slice(0, visibleCount);
+      const hasMoreItems = sortedHistory.length > visibleCount;
       
       let html = '';
       displayHistory.forEach((item, globalIdx) => {
@@ -8919,7 +8961,13 @@ const Business = {
           toggleEl.style.display = 'block';
           const toggleBtn = toggleEl.querySelector('.toggle-btn');
           if(toggleBtn) {
-            toggleBtn.textContent = isExpanded ? '收起' : '显示更多';
+            if (visibleCount === 2) {
+              toggleBtn.textContent = '显示更多';
+            } else if (visibleCount < sortedHistory.length) {
+              toggleBtn.textContent = '加载更多';
+            } else {
+              toggleBtn.textContent = '收起';
+            }
           }
         } else {
           toggleEl.style.display = 'none';
@@ -8957,8 +9005,26 @@ const Business = {
   toggleSpecialHistory: () => {
     try {
       const state = StateManager._state;
-      const newExpanded = !state.specialHistoryExpanded;
-      StateManager.setState({ specialHistoryExpanded: newExpanded }, false);
+      const history = state.specialHistory || [];
+      
+      // 使用辅助函数获取筛选后的历史记录
+      const filteredHistory = Business.getFilteredSpecialHistory();
+      const totalCount = filteredHistory.length;
+      const currentVisibleCount = state.specialHistoryVisibleCount || 2;
+      let newVisibleCount;
+      
+      if (currentVisibleCount === 2) {
+        // 从默认状态展开，显示10条
+        newVisibleCount = Math.min(10, totalCount);
+      } else if (currentVisibleCount < totalCount) {
+        // 继续加载更多，每次加载10条
+        newVisibleCount = Math.min(currentVisibleCount + 10, totalCount);
+      } else {
+        // 已经显示全部，收起回到2条
+        newVisibleCount = 2;
+      }
+      
+      StateManager.setState({ specialHistoryVisibleCount: newVisibleCount }, false);
       Business.renderSpecialHistory();
     } catch(e) {
       console.error('切换精选特码历史展开状态失败', e);
@@ -10008,8 +10074,8 @@ const Business = {
     try {
       const state = StateManager._state;
       const historyListEl = document.getElementById('selectedZodiacHistoryList');
-      const historyBodyEl = document.getElementById('selectedZodiacHistoryBody');
-      const toggleIconEl = document.getElementById('selectedZodiacHistoryToggleIcon');
+      const toggleEl = document.getElementById('selectedZodiacHistoryToggle');
+      const visibleCount = state.selectedZodiacHistoryVisibleCount || 2;
       
       if(!historyListEl) return;
       
@@ -10017,14 +10083,24 @@ const Business = {
       
       if(!history || history.length === 0) {
         historyListEl.innerHTML = '<div style="text-align:center;color:var(--sub-text);padding:20px;font-size:13px;">暂无精选生肖历史</div>';
+        if(toggleEl) toggleEl.style.display = 'none';
         return;
       }
       
-      // 显示所有历史记录
-      const displayHistory = history;
+      // 按时间戳降序排序，确保最新的记录在前面
+      const sortedHistory = history.sort((a, b) => {
+        const timestampA = a.timestamp || 0;
+        const timestampB = b.timestamp || 0;
+        return timestampB - timestampA;
+      });
+      
+      // 决定显示的记录数量
+      const displayHistory = sortedHistory.slice(0, visibleCount);
+      const hasMoreItems = sortedHistory.length > visibleCount;
       
       let html = '';
       displayHistory.forEach((item, globalIdx) => {
+        const originalIdx = sortedHistory.indexOf(item);
         let titleText = '';
         if(item.expect) {
           titleText = `第${item.expect}期`;
@@ -10033,7 +10109,7 @@ const Business = {
         const zodiacTags = item.selectedZodiacs.map(z => {
           const isMatchZodiac = item.actualZodiac && z.zodiac === item.actualZodiac;
           const tagClass = isMatchZodiac ? 'history-tag hit' : 'history-tag';
-          return `<span class="${tagClass}" onclick="Business.showSelectedZodiacDetail(${globalIdx}, event)" style="cursor:pointer;">${z.zodiac}</span>`;
+          return `<span class="${tagClass}" onclick="Business.showSelectedZodiacDetail(${originalIdx}, event)" style="cursor:pointer;">${z.zodiac}</span>`;
         }).join('');
         
         const actualZodiacClass = item.isHit ? 'history-tag hit' : 'history-tag miss';
@@ -10042,8 +10118,8 @@ const Business = {
         const zodiacNames = item.selectedZodiacs.map(z => z.zodiac).join(' ');
         
         html += `
-          <div class="special-history-item" data-index="${globalIdx}" style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;position:relative;overflow:hidden;">
-            <div class="special-history-delete" onclick="Business.deleteSelectedZodiacHistoryItem(${globalIdx}, event)" style="position:absolute;right:0;top:0;bottom:0;width:80px;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:translateX(100%);transition:transform 0.3s ease;z-index:10;">
+          <div class="special-history-item" data-index="${originalIdx}" style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;position:relative;overflow:hidden;transition:all 0.3s ease;">
+            <div class="special-history-delete" onclick="Business.deleteSelectedZodiacHistoryItem(${originalIdx}, event)" style="position:absolute;right:0;top:0;bottom:0;width:80px;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transform:translateX(100%);transition:transform 0.3s ease;z-index:10;">
               <span style="font-size:14px;">删除</span>
             </div>
             <div class="special-history-content" style="transition:transform 0.3s ease;position:relative;z-index:5;background:var(--card);">
@@ -10054,16 +10130,33 @@ const Business = {
               </div>
               <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;">
                 <div style="flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px;">${zodiacTags}</div>
-                ${item.actualZodiac ? `<span class="${actualZodiacClass}" onclick="Business.showSelectedZodiacDetail(${globalIdx}, event)" style="flex-shrink:0;cursor:pointer;">${item.actualZodiac}</span>` : ''}
+                ${item.actualZodiac ? `<span class="${actualZodiacClass}" onclick="Business.showSelectedZodiacDetail(${originalIdx}, event)" style="flex-shrink:0;cursor:pointer;">${item.actualZodiac}</span>` : ''}
               </div>
             </div>
           </div>
         `;
       });
       
-
-      
       historyListEl.innerHTML = html;
+      
+      // 显示/隐藏展开更多按钮
+      if(toggleEl) {
+        if(hasMoreItems) {
+          toggleEl.style.display = 'block';
+          const toggleBtn = toggleEl.querySelector('.toggle-btn');
+          if(toggleBtn) {
+            if (visibleCount === 2) {
+              toggleBtn.textContent = '显示更多';
+            } else if (visibleCount < sortedHistory.length) {
+              toggleBtn.textContent = '加载更多';
+            } else {
+              toggleBtn.textContent = '收起';
+            }
+          }
+        } else {
+          toggleEl.style.display = 'none';
+        }
+      }
     } catch(e) {
       console.error('渲染精选生肖历史失败', e);
     }
@@ -10562,7 +10655,7 @@ const Business = {
       const state = StateManager._state;
       const historyListEl = document.getElementById('hotNumbersHistoryList');
       const toggleEl = document.getElementById('hotNumbersHistoryToggle');
-      const isExpanded = state.hotNumbersHistoryExpanded || false;
+      const visibleCount = state.hotNumbersHistoryVisibleCount || 2;
       
       if(!historyListEl) return;
       
@@ -10581,10 +10674,9 @@ const Business = {
         return timestampB - timestampA;
       });
       
-      // 根据展开状态决定显示的记录数量
-      const MAX_VISIBLE_ITEMS = 1;
-      const displayData = isExpanded ? sortedHistory : sortedHistory.slice(0, MAX_VISIBLE_ITEMS);
-      const hasMoreItems = sortedHistory.length > MAX_VISIBLE_ITEMS;
+      // 决定显示的记录数量
+      const displayData = sortedHistory.slice(0, visibleCount);
+      const hasMoreItems = sortedHistory.length > visibleCount;
       
       let historyHtml = '';
       displayData.forEach((item, globalIdx) => {
@@ -10644,7 +10736,13 @@ const Business = {
           toggleEl.style.display = 'block';
           const toggleBtn = toggleEl.querySelector('.toggle-btn');
           if(toggleBtn) {
-            toggleBtn.textContent = isExpanded ? '收起' : '显示更多';
+            if (visibleCount === 2) {
+              toggleBtn.textContent = '显示更多';
+            } else if (visibleCount < sortedHistory.length) {
+              toggleBtn.textContent = '加载更多';
+            } else {
+              toggleBtn.textContent = '收起';
+            }
           }
         } else {
           toggleEl.style.display = 'none';
@@ -10853,10 +10951,74 @@ const Business = {
    * 切换特码热门top5历史展开/折叠
    */
   toggleHotNumbersHistory: () => {
-    const state = StateManager._state;
-    const expanded = !state.hotNumbersHistoryExpanded;
-    StateManager.setState({ hotNumbersHistoryExpanded: expanded }, false);
-    Business.renderHotNumbersHistory();
+    try {
+      const state = StateManager._state;
+      const history = state.hotNumbersHistory || [];
+      
+      // 按时间戳降序排序，确保最新的记录在前面
+      const sortedHistory = history.sort((a, b) => {
+        const timestampA = a.timestamp || 0;
+        const timestampB = b.timestamp || 0;
+        return timestampB - timestampA;
+      });
+      
+      const totalCount = sortedHistory.length;
+      const currentVisibleCount = state.hotNumbersHistoryVisibleCount || 2;
+      let newVisibleCount;
+      
+      if (currentVisibleCount === 2) {
+        // 从默认状态展开，显示10条
+        newVisibleCount = Math.min(10, totalCount);
+      } else if (currentVisibleCount < totalCount) {
+        // 继续加载更多，每次加载10条
+        newVisibleCount = Math.min(currentVisibleCount + 10, totalCount);
+      } else {
+        // 已经显示全部，收起回到2条
+        newVisibleCount = 2;
+      }
+      
+      StateManager.setState({ hotNumbersHistoryVisibleCount: newVisibleCount }, false);
+      Business.renderHotNumbersHistory();
+    } catch(e) {
+      console.error('切换特码热门top5历史展开状态失败', e);
+    }
+  },
+  
+  /**
+   * 切换精选生肖历史的展开/折叠状态
+   */
+  toggleSelectedZodiacHistory: () => {
+    try {
+      const state = StateManager._state;
+      const history = state.selectedZodiacHistory || [];
+      
+      // 按时间戳降序排序，确保最新的记录在前面
+      const sortedHistory = history.sort((a, b) => {
+        const timestampA = a.timestamp || 0;
+        const timestampB = b.timestamp || 0;
+        return timestampB - timestampA;
+      });
+      
+      const totalCount = sortedHistory.length;
+      const currentVisibleCount = state.selectedZodiacHistoryVisibleCount || 2;
+      let newVisibleCount;
+      
+      if (currentVisibleCount === 2) {
+        // 从默认状态展开，显示10条
+        newVisibleCount = Math.min(10, totalCount);
+      } else if (currentVisibleCount < totalCount) {
+        // 继续加载更多，每次加载10条
+        newVisibleCount = Math.min(currentVisibleCount + 10, totalCount);
+      } else {
+        // 已经显示全部，收起回到2条
+        newVisibleCount = 2;
+      }
+      
+      StateManager.setState({ selectedZodiacHistoryVisibleCount: newVisibleCount }, false);
+      Business.renderSelectedZodiacHistory();
+    } catch(e) {
+      console.error('切换精选生肖历史展开状态失败', e);
+    }
   },
   
   /**
